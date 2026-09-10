@@ -83,6 +83,18 @@ class _TwoPlayerScreenState extends ConsumerState<TwoPlayerScreen> {
                   ),
                 ],
               ),
+              if (!view.state.isComplete)
+                Align(
+                  child: Material(
+                    color: Colors.black54,
+                    shape: const CircleBorder(),
+                    child: IconButton(
+                      icon: const Icon(Icons.close, color: Colors.white),
+                      tooltip: "Quit to menu",
+                      onPressed: () => context.go(Routes.home),
+                    ),
+                  ),
+                ),
               if (view.state.isComplete)
                 _ResultOverlay(
                   winner: view.state.winner,

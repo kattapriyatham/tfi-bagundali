@@ -74,10 +74,14 @@ class _SoloGameScreenState extends ConsumerState<SoloGameScreen> {
             return Column(
               children: [
                 Padding(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.fromLTRB(8, 4, 16, 4),
                   child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
+                      IconButton(
+                        icon: const Icon(Icons.close),
+                        tooltip: "Quit to menu",
+                        onPressed: () => context.go(Routes.home),
+                      ),
                       Text(
                         _fmt(view.elapsed),
                         style: const TextStyle(
@@ -85,6 +89,7 @@ class _SoloGameScreenState extends ConsumerState<SoloGameScreen> {
                           fontWeight: FontWeight.w800,
                         ),
                       ),
+                      const Spacer(),
                       Text("Cards Left ${view.cardsLeft}/56"),
                     ],
                   ),
