@@ -40,24 +40,32 @@ def sources() -> list[pathlib.Path]:
     return src
 
 
-def normalise(img: Image.Image) -> Image.Image:
-    """Tight-crop to visible content, then scale so the longest side is SIZE.
+_FILL = 0.86  # fraction of the square canvas the content spans
 
-    Aspect ratio is preserved and there is only a hair of transparent
-    margin, so `BoxFit.contain` fills the card slot instead of leaving the
-    subject tiny inside a big transparent square.
+
+def normalise(img: Image.Image) -> Image.Image:
+    """Tight-crop to visible content, then centre it on a transparent square
+    so its longest side spans ~86% of the canvas.
+
+    Squaring every symbol gives them a consistent on-card size regardless of
+    the source aspect ratio (a wide two-person sticker and a tall single
+    figure end up occupying the same slot area under `BoxFit.contain`).
     """
     img = img.convert("RGBA")
     bbox = img.split()[3].getbbox()
     if bbox:
-        m = 6
-        x0 = max(bbox[0] - m, 0)
-        y0 = max(bbox[1] - m, 0)
-        x1 = min(bbox[2] + m, img.width)
-        y1 = min(bbox[3] + m, img.height)
-        img = img.crop((x0, y0, x1, y1))
-    img.thumbnail((SIZE, SIZE), Image.Resampling.LANCZOS)
-    return img
+        m = 4
+        img = img.crop((
+            max(bbox[0] - m, 0),
+            max(bbox[1] - m, 0),
+            min(bbox[2] + m, img.width),
+            min(bbox[3] + m, img.height),
+        ))
+    target = int(SIZE * _FILL)
+    img.thumbnail((target, target), Image.Resampling.LANCZOS)
+    canvas = Image.new("RGBA", (SIZE, SIZE), (0, 0, 0, 0))
+    canvas.paste(img, ((SIZE - img.width) // 2, (SIZE - img.height) // 2), img)
+    return canvas
 
 
 def main() -> None:
