@@ -29,7 +29,8 @@ class _TwoPlayerScreenState extends ConsumerState<TwoPlayerScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.charcoal,
-      body: deck.when(
+      body: SafeArea(
+        child: deck.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(
           child: Text(
@@ -114,6 +115,7 @@ class _TwoPlayerScreenState extends ConsumerState<TwoPlayerScreen> {
             ],
           );
         },
+        ),
       ),
     );
   }

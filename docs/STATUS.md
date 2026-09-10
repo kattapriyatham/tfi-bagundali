@@ -13,8 +13,11 @@ emulator (`./scripts/run_dev.sh`).
 | Local 2-player | New split-screen "tabletop" mode (mirrored halves), reachable from home |
 | Settings | New screen (haptics toggle, sound placeholder, about); wired from home |
 | Haptics | Match = selection click, wrong = heavy impact, gated by the setting |
-| AdMob | `google_mobile_ads` integrated with **Google test ids**; banner on home + solo result, interstitial on cold-open and game-end. Disabled in debug builds. |
+| Sound | System-sound cues (match / wrong / countdown tick), gated by the Sound setting (now live). No custom audio assets yet. |
+| AdMob | `google_mobile_ads` 9.1.0 with **Google test ids**; banner on home + solo result, interstitial on cold-open and game-end. Disabled in debug builds. |
 | App icon + name | Gold star + "TFI" on cinema red; label "TFI Bagundaali" on both platforms |
+| Quit buttons | Solo and 2-player game screens have a close button — no dead ends |
+| Animations | Solo cards scale/fade in on change; sticker knockout cleaned up (fewer halos) |
 | `.env` + `scripts/run_dev.sh` | Runs the app on an Android emulator with `--dart-define`s from `.env` |
 
 ## Decisions I made (review these)
