@@ -1,9 +1,116 @@
 import "package:flutter/material.dart";
+import "package:flutter_riverpod/flutter_riverpod.dart";
+import "package:go_router/go_router.dart";
 
-class SoloGameScreen extends StatelessWidget {
+import "../core/router.dart";
+import "../game/engine/round_state.dart";
+import "../game/solo/solo_controller.dart";
+import "widgets/card_view.dart";
+import "widgets/countdown_view.dart";
+
+class SoloGameScreen extends ConsumerStatefulWidget {
   const SoloGameScreen({super.key});
 
   @override
-  Widget build(BuildContext context) =>
-      const Scaffold(body: Center(child: Text("Solo")));
+  ConsumerState<SoloGameScreen> createState() => _SoloGameScreenState();
+}
+
+class _SoloGameScreenState extends ConsumerState<SoloGameScreen> {
+  bool _counting = true;
+  bool _leaving = false;
+
+  Future<void> _onComplete() async {
+    if (_leaving) return;
+    _leaving = true;
+    await ref.read(soloControllerProvider.notifier).committed;
+    if (mounted) context.go(Routes.soloResult);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    ref.listen(soloControllerProvider, (_, next) {
+      if (next.complete) _onComplete();
+    });
+
+    final deck = ref.watch(deckProvider);
+
+    return Scaffold(
+      body: SafeArea(
+        child: deck.when(
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (e, _) => Center(child: Text("Failed to load deck: $e")),
+          data: (loadedDeck) {
+            if (_counting) {
+              return CountdownView(
+                onDone: () {
+                  setState(() => _counting = false);
+                  ref.read(soloControllerProvider.notifier).start();
+                },
+              );
+            }
+
+            final view = ref.watch(soloControllerProvider);
+            if (view.complete) {
+              return const Center(child: CircularProgressIndicator());
+            }
+
+            final center = loadedDeck.card(centerCardId(view.round));
+            final held = loadedDeck.card(view.round.heldCardId);
+
+            return Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        _fmt(view.elapsed),
+                        style: const TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      Text("Cards Left ${view.cardsLeft}/56"),
+                    ],
+                  ),
+                ),
+                Expanded(
+                  child: Center(
+                    child: CardView(
+                      card: center,
+                      diameter: 200,
+                      interactive: false,
+                      onSymbolTap: (_) {},
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: Center(
+                    child: CardView(
+                      card: held,
+                      wrongSymbolId: view.lastWrongSymbolId,
+                      onSymbolTap: (id) =>
+                          ref.read(soloControllerProvider.notifier).tap(id),
+                    ),
+                  ),
+                ),
+                const Padding(
+                  padding: EdgeInsets.only(bottom: 16),
+                  child: Text("Find the matching symbol!"),
+                ),
+              ],
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  String _fmt(Duration d) {
+    final s = d.inSeconds;
+    final tenths = d.inMilliseconds.remainder(1000) ~/ 100;
+    return "${(s ~/ 60).toString().padLeft(2, '0')}:"
+        "${(s % 60).toString().padLeft(2, '0')}.$tenths";
+  }
 }
