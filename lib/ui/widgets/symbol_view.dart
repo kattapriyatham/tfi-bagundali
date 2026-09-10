@@ -2,8 +2,11 @@ import "dart:math";
 
 import "package:flutter/material.dart";
 
+import "../../deck/symbol_assets.dart";
 import "../../deck/symbol_catalog.dart";
 
+/// Renders one game symbol: the real Tollywood sticker art when a bundled
+/// asset exists for [symbolId], otherwise a painted placeholder shape.
 class SymbolView extends StatelessWidget {
   const SymbolView({required this.symbolId, this.size = 48, super.key});
 
@@ -12,22 +15,37 @@ class SymbolView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final art = symbolArt(symbolId);
+    final asset =
+        (symbolId >= 0 && symbolId < kSymbolAssets.length)
+            ? kSymbolAssets[symbolId]
+            : null;
+
     return SizedBox(
       width: size,
       height: size,
-      child: CustomPaint(
-        painter: _SymbolPainter(art),
-        child: Center(
-          child: FittedBox(
-            child: Padding(
-              padding: const EdgeInsets.all(6),
-              child: Text(
-                art.label,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w800,
-                ),
+      child: asset != null
+          ? Image.asset(
+              asset,
+              fit: BoxFit.contain,
+              errorBuilder: (_, __, ___) => _placeholder(),
+            )
+          : _placeholder(),
+    );
+  }
+
+  Widget _placeholder() {
+    final art = symbolArt(symbolId);
+    return CustomPaint(
+      painter: _SymbolPainter(art),
+      child: Center(
+        child: FittedBox(
+          child: Padding(
+            padding: const EdgeInsets.all(6),
+            child: Text(
+              art.label,
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w800,
               ),
             ),
           ),
