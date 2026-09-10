@@ -98,12 +98,17 @@ def crop_dark_pack(path: pathlib.Path, prefix: str) -> list[str]:
         sub = bgr[y0:y1, x0:x1].astype(np.float32)
         bh, bw = sub.shape[:2]
 
-        oval = _oval_alpha(bh, bw).astype(np.float32) / 255.0
-        # Mild dark-pixel knockout: very dark vignette pixels lose alpha.
+        oval = _oval_alpha(bh, bw, inner=0.48, outer=0.98).astype(np.float32)
+        oval /= 255.0
+        # Knock the dark vignette out properly: pure black -> transparent,
+        # mid tones ramp up fast. Dark clothing goes a little translucent
+        # (reads as a faded print) instead of leaving a grey ring.
         v = cv2.cvtColor(sub.astype(np.uint8), cv2.COLOR_BGR2HSV)[:, :, 2] / 255.0
-        dark = np.clip((v - 0.06) / 0.14, 0.62, 1.0)
-        alpha = np.clip(oval * dark, 0, 1)
-        alpha = cv2.GaussianBlur(alpha, (0, 0), 2.0)
+        s = cv2.cvtColor(sub.astype(np.uint8), cv2.COLOR_BGR2HSV)[:, :, 1] / 255.0
+        fg = np.clip((v - 0.16) / 0.30, 0.0, 1.0)
+        fg = np.maximum(fg, np.clip((s - 0.20) / 0.30, 0.0, 1.0))
+        alpha = np.clip(oval * (0.15 + 0.85 * fg), 0, 1)
+        alpha = cv2.GaussianBlur(alpha, (0, 0), 2.5)
 
         rgba = np.dstack([sub, alpha * 255]).astype(np.uint8)
         rgba = _trim_alpha(rgba)
