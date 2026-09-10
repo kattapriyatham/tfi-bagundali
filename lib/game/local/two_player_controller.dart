@@ -88,6 +88,13 @@ class TwoPlayerController extends Notifier<TwoPlayerView> {
       return;
     }
 
+    // Debounce a resting finger so it does not re-tap the fresh card.
+    final debounce = now.add(const Duration(milliseconds: 250));
+    if (player == 1) {
+      _lockP1 = debounce;
+    } else {
+      _lockP2 = debounce;
+    }
     state = TwoPlayerView(state: next, wrongP1: null, wrongP2: null);
   }
 }

@@ -37,12 +37,15 @@ void main() {
   test("both players racing finish the pile and set a winner", () async {
     final c = make();
     await c.read(deckProvider.future);
-    final ctrl = c.read(twoPlayerControllerProvider.notifier)..start(seed: 5);
+    var now = DateTime(2026);
+    final ctrl = c.read(twoPlayerControllerProvider.notifier)
+      ..start(seed: 5, clock: () => now);
     var turn = 1;
     var guard = 0;
     bool done() => c.read(twoPlayerControllerProvider).state.isComplete;
     while (!done() && guard++ < 200) {
       final s = c.read(twoPlayerControllerProvider).state;
+      now = now.add(const Duration(seconds: 1));
       ctrl.tap(turn, matchFor(s, turn));
       turn = turn == 1 ? 2 : 1;
     }

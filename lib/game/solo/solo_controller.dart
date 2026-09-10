@@ -103,6 +103,10 @@ class SoloController extends Notifier<SoloView> {
       return;
     }
 
+    // Debounce: a finger still resting near the card must not immediately
+    // register a stray tap on the next card.
+    _lockUntil = now.add(const Duration(milliseconds: 250));
+
     final elapsed = now.difference(_firstTapAt!);
     final done = isComplete(next);
     state = state.copyWith(
