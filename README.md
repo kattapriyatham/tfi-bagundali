@@ -13,6 +13,16 @@ land in later plans.
     dart run build_runner build --delete-conflicting-outputs
     flutter run
 
+### Run on an Android emulator with env vars
+
+    cp .env.example .env        # first time; edit values as needed
+    ./scripts/run_dev.sh
+
+The script reads `.env`, passes every `KEY=VALUE` to the app as
+`--dart-define` (read in Dart via `String.fromEnvironment("KEY")`), boots the
+Android emulator named by `ANDROID_EMULATOR` if none is attached, and runs.
+`.env` is gitignored; `.env.example` is the committed template.
+
 ## Test
 
     flutter test
