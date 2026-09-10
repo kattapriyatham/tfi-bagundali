@@ -56,6 +56,9 @@ class _SoloGameScreenState extends ConsumerState<SoloGameScreen> {
 
             final center = loadedDeck.card(centerCardId(view.round));
             final held = loadedDeck.card(view.round.heldCardId);
+            final w = MediaQuery.sizeOf(context).width;
+            final centerD = (w * 0.52).clamp(180.0, 320.0);
+            final heldD = (w * 0.92).clamp(280.0, 460.0);
 
             return Column(
               children: [
@@ -76,19 +79,22 @@ class _SoloGameScreenState extends ConsumerState<SoloGameScreen> {
                   ),
                 ),
                 Expanded(
+                  flex: 4,
                   child: Center(
                     child: CardView(
                       card: center,
-                      diameter: 200,
+                      diameter: centerD,
                       interactive: false,
                       onSymbolTap: (_) {},
                     ),
                   ),
                 ),
                 Expanded(
+                  flex: 6,
                   child: Center(
                     child: CardView(
                       card: held,
+                      diameter: heldD,
                       wrongSymbolId: view.lastWrongSymbolId,
                       onSymbolTap: (id) =>
                           ref.read(soloControllerProvider.notifier).tap(id),

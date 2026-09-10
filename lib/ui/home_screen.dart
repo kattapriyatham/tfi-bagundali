@@ -74,10 +74,10 @@ class HomeScreen extends StatelessWidget {
                         comingSoon: true,
                       ),
                       const SizedBox(height: 12),
-                      const _MenuButton(
+                      _MenuButton(
                         label: "2-Player",
-                        subtitle: "Same device",
-                        comingSoon: true,
+                        subtitle: "Same device, tabletop",
+                        onTap: () => context.go(Routes.twoPlayer),
                       ),
                       const SizedBox(height: 12),
                       const _MenuButton(

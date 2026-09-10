@@ -18,3 +18,5 @@ linter:
     # Cosmetic; not enforced.
     sort_pub_dependencies: false
     cascade_invocations: false
+    # Conflicts with freezed: `X._()` must precede the factory constructor.
+    sort_unnamed_constructors_first: false

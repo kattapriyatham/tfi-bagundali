@@ -3,11 +3,13 @@ import "package:go_router/go_router.dart";
 import "../ui/home_screen.dart";
 import "../ui/solo_game_screen.dart";
 import "../ui/solo_result_screen.dart";
+import "../ui/two_player_screen.dart";
 
 abstract final class Routes {
   static const home = "/";
   static const solo = "/solo";
   static const soloResult = "/solo/result";
+  static const twoPlayer = "/two-player";
 }
 
 final router = GoRouter(
@@ -18,6 +20,10 @@ final router = GoRouter(
     GoRoute(
       path: Routes.soloResult,
       builder: (_, __) => const SoloResultScreen(),
+    ),
+    GoRoute(
+      path: Routes.twoPlayer,
+      builder: (_, __) => const TwoPlayerScreen(),
     ),
   ],
 );

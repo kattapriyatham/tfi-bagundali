@@ -40,12 +40,24 @@ def sources() -> list[pathlib.Path]:
     return src
 
 
-def square(img: Image.Image) -> Image.Image:
+def normalise(img: Image.Image) -> Image.Image:
+    """Tight-crop to visible content, then scale so the longest side is SIZE.
+
+    Aspect ratio is preserved and there is only a hair of transparent
+    margin, so `BoxFit.contain` fills the card slot instead of leaving the
+    subject tiny inside a big transparent square.
+    """
     img = img.convert("RGBA")
+    bbox = img.split()[3].getbbox()
+    if bbox:
+        m = 6
+        x0 = max(bbox[0] - m, 0)
+        y0 = max(bbox[1] - m, 0)
+        x1 = min(bbox[2] + m, img.width)
+        y1 = min(bbox[3] + m, img.height)
+        img = img.crop((x0, y0, x1, y1))
     img.thumbnail((SIZE, SIZE), Image.Resampling.LANCZOS)
-    canvas = Image.new("RGBA", (SIZE, SIZE), (0, 0, 0, 0))
-    canvas.paste(img, ((SIZE - img.width) // 2, (SIZE - img.height) // 2), img)
-    return canvas
+    return img
 
 
 def main() -> None:
@@ -60,7 +72,7 @@ def main() -> None:
     src = src[:real]
 
     for i, path in enumerate(src):
-        square(Image.open(path)).save(OUT / f"{i:02d}.png", optimize=True)
+        normalise(Image.open(path)).save(OUT / f"{i:02d}.png", optimize=True)
 
     entries = ",\n".join(
         f'  "assets/symbols/{i:02d}.png"' for i in range(real)

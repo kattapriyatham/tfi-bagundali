@@ -11,6 +11,10 @@ void main() {
             path: "/solo",
             builder: (_, __) => const Scaffold(body: Text("solo screen")),
           ),
+          GoRoute(
+            path: "/two-player",
+            builder: (_, __) => const Scaffold(body: Text("2p screen")),
+          ),
         ],
       );
 
@@ -30,16 +34,24 @@ void main() {
     expect(find.text("FOR THE LOVE OF TFI."), findsOneWidget);
     expect(find.byKey(const Key("ad-slot")), findsOneWidget);
     expect(find.text("Play Online"), findsOneWidget);
-    expect(find.text("SOON"), findsNWidgets(3));
+    expect(find.text("SOON"), findsNWidgets(2));
   });
 
-  testWidgets("Play Solo navigates; Play Online does not", (tester) async {
+  testWidgets("Play Solo and 2-Player navigate; Play Online does not",
+      (tester) async {
     await pumpHome(tester);
 
     await tester.tap(find.text("Play Online"));
     await tester.pumpAndSettle();
     expect(find.text("solo screen"), findsNothing);
 
+    await tester.tap(find.text("2-Player"));
+    await tester.pumpAndSettle();
+    expect(find.text("2p screen"), findsOneWidget);
+  });
+
+  testWidgets("Play Solo navigates", (tester) async {
+    await pumpHome(tester);
     await tester.tap(find.text("Play Solo"));
     await tester.pumpAndSettle();
     expect(find.text("solo screen"), findsOneWidget);

@@ -73,7 +73,7 @@ class CardView extends StatelessWidget {
                       child: Center(
                         child: SymbolView(
                           symbolId: p.symbolId,
-                          size: 2 * kSymbolRadius * p.scale * radius * 0.82,
+                          size: 2 * kSymbolRadius * p.scale * radius * 1.12,
                         ),
                       ),
                     ),
