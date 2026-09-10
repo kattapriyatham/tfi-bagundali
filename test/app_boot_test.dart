@@ -6,6 +6,6 @@ void main() {
   testWidgets("app boots to the home route", (tester) async {
     await tester.pumpWidget(const ProviderScope(child: MyApp()));
     await tester.pumpAndSettle();
-    expect(find.text("TFI Bagundaali"), findsWidgets);
+    expect(find.text("FOR THE LOVE OF TFI."), findsOneWidget);
   });
 }

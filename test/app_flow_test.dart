@@ -23,7 +23,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.widgetWithText(FilledButton, "Play Solo"));
+    await tester.tap(find.text("Play Solo"));
     await tester.pumpAndSettle();
 
     for (var i = 0; i < 4; i++) {
