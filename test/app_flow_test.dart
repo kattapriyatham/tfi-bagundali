@@ -1,0 +1,52 @@
+import "package:flutter/material.dart";
+import "package:flutter_riverpod/flutter_riverpod.dart";
+import "package:flutter_test/flutter_test.dart";
+import "package:shared_preferences/shared_preferences.dart";
+import "package:tfi_bagundaali/app.dart";
+import "package:tfi_bagundaali/deck/deck_loader.dart";
+import "package:tfi_bagundaali/deck/dobble.dart";
+import "package:tfi_bagundaali/deck/match_rules.dart";
+import "package:tfi_bagundaali/game/engine/round_state.dart";
+import "package:tfi_bagundaali/game/solo/solo_controller.dart";
+
+void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+  final deck = deckFromRows(generateDobbleDeck(7));
+
+  testWidgets("home -> solo -> finish -> result", (tester) async {
+    SharedPreferences.setMockInitialValues({});
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [deckProvider.overrideWith((_) async => deck)],
+        child: const MyApp(),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.widgetWithText(FilledButton, "Play Solo"));
+    await tester.pumpAndSettle();
+
+    for (var i = 0; i < 4; i++) {
+      await tester.pump(const Duration(seconds: 1));
+    }
+    await tester.pumpAndSettle();
+
+    final container = ProviderScope.containerOf(
+      tester.element(find.byType(MaterialApp)),
+    );
+    final ctrl = container.read(soloControllerProvider.notifier);
+    var guard = 0;
+    while (!container.read(soloControllerProvider).complete && guard++ < 100) {
+      final s = container.read(soloControllerProvider).round;
+      final match = sharedSymbol(
+        deck.card(s.heldCardId),
+        deck.card(centerCardId(s)),
+      );
+      ctrl.tap(match);
+    }
+    await ctrl.committed;
+    await tester.pumpAndSettle();
+
+    expect(find.text("YOU DID IT!"), findsOneWidget);
+  });
+}
