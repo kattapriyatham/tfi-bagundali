@@ -4,6 +4,7 @@ import "package:go_router/go_router.dart";
 
 import "../core/haptics.dart";
 import "../core/router.dart";
+import "../core/sound.dart";
 import "../game/engine/round_state.dart";
 import "../game/solo/solo_controller.dart";
 import "../storage/settings_store.dart";
@@ -31,14 +32,16 @@ class _SoloGameScreenState extends ConsumerState<SoloGameScreen> {
   @override
   Widget build(BuildContext context) {
     ref.listen(soloControllerProvider, (prev, next) {
-      final haptics = ref.read(settingsProvider).haptics;
+      final s = ref.read(settingsProvider);
       if (prev != null &&
           next.lastWrongSymbolId != null &&
           next.lastWrongSymbolId != prev.lastWrongSymbolId) {
-        hapticWrong(enabled: haptics);
+        hapticWrong(enabled: s.haptics);
+        sfxWrong(enabled: s.sound);
       } else if (prev != null &&
           next.round.collected > prev.round.collected) {
-        hapticMatch(enabled: haptics);
+        hapticMatch(enabled: s.haptics);
+        sfxMatch(enabled: s.sound);
       }
       if (next.complete) _onComplete();
     });
@@ -53,6 +56,8 @@ class _SoloGameScreenState extends ConsumerState<SoloGameScreen> {
           data: (loadedDeck) {
             if (_counting) {
               return CountdownView(
+                onTick: () =>
+                    sfxTick(enabled: ref.read(settingsProvider).sound),
                 onDone: () {
                   setState(() => _counting = false);
                   ref.read(soloControllerProvider.notifier).start();
@@ -97,23 +102,37 @@ class _SoloGameScreenState extends ConsumerState<SoloGameScreen> {
                 Expanded(
                   flex: 4,
                   child: Center(
-                    child: CardView(
-                      card: center,
-                      diameter: centerD,
-                      interactive: false,
-                      onSymbolTap: (_) {},
+                    child: AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 220),
+                      transitionBuilder: (c, a) =>
+                          ScaleTransition(scale: a, child: c),
+                      child: CardView(
+                        key: ValueKey("center-${center.id}"),
+                        card: center,
+                        diameter: centerD,
+                        interactive: false,
+                        onSymbolTap: (_) {},
+                      ),
                     ),
                   ),
                 ),
                 Expanded(
                   flex: 6,
                   child: Center(
-                    child: CardView(
-                      card: held,
-                      diameter: heldD,
-                      wrongSymbolId: view.lastWrongSymbolId,
-                      onSymbolTap: (id) =>
-                          ref.read(soloControllerProvider.notifier).tap(id),
+                    child: AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 220),
+                      transitionBuilder: (c, a) => ScaleTransition(
+                        scale: Tween<double>(begin: 0.86, end: 1).animate(a),
+                        child: FadeTransition(opacity: a, child: c),
+                      ),
+                      child: CardView(
+                        key: ValueKey("held-${held.id}"),
+                        card: held,
+                        diameter: heldD,
+                        wrongSymbolId: view.lastWrongSymbolId,
+                        onSymbolTap: (id) =>
+                            ref.read(soloControllerProvider.notifier).tap(id),
+                      ),
                     ),
                   ),
                 ),

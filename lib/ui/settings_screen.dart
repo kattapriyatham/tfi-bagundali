@@ -34,9 +34,9 @@ class SettingsScreen extends ConsumerWidget {
           ),
           SwitchListTile(
             title: const Text("Sound effects"),
-            subtitle: const Text("Coming soon"),
+            subtitle: const Text("Match, mistake, and countdown cues"),
             value: settings.sound,
-            onChanged: null,
+            onChanged: (v) => ctrl.setSound(enabled: v),
           ),
           const Divider(),
           const ListTile(

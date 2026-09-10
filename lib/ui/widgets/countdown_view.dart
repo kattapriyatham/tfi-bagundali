@@ -7,11 +7,15 @@ import "../../core/theme.dart";
 class CountdownView extends StatefulWidget {
   const CountdownView({
     required this.onDone,
+    this.onTick,
     this.step = const Duration(seconds: 1),
     super.key,
   });
 
   final VoidCallback onDone;
+
+  /// Called once per frame change (3, 2, 1, GO!).
+  final VoidCallback? onTick;
   final Duration step;
 
   @override
@@ -26,12 +30,14 @@ class _CountdownViewState extends State<CountdownView> {
   @override
   void initState() {
     super.initState();
+    widget.onTick?.call();
     _timer = Timer.periodic(widget.step, (_) {
       if (_i >= _frames.length - 1) {
         _timer?.cancel();
         widget.onDone();
       } else {
         setState(() => _i++);
+        widget.onTick?.call();
       }
     });
   }

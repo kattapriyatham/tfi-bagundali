@@ -5,6 +5,7 @@ import "package:go_router/go_router.dart";
 import "../ads/ad_service.dart";
 import "../core/haptics.dart";
 import "../core/router.dart";
+import "../core/sound.dart";
 import "../core/theme.dart";
 import "../game/local/two_player_controller.dart";
 import "../game/solo/solo_controller.dart" show deckProvider;
@@ -39,6 +40,7 @@ class _TwoPlayerScreenState extends ConsumerState<TwoPlayerScreen> {
         data: (_) {
           if (_counting) {
             return CountdownView(
+              onTick: () => sfxTick(enabled: ref.read(settingsProvider).sound),
               onDone: () {
                 setState(() => _counting = false);
                 ref.read(twoPlayerControllerProvider.notifier).start();
@@ -48,7 +50,7 @@ class _TwoPlayerScreenState extends ConsumerState<TwoPlayerScreen> {
 
           ref.listen(twoPlayerControllerProvider, (prev, next) {
             if (prev == null) return;
-            final haptics = ref.read(settingsProvider).haptics;
+            final st = ref.read(settingsProvider);
             final wrongChanged =
                 next.wrongP1 != prev.wrongP1 || next.wrongP2 != prev.wrongP2;
             final prevScore = prev.state.countP1 + prev.state.countP2;
@@ -56,9 +58,11 @@ class _TwoPlayerScreenState extends ConsumerState<TwoPlayerScreen> {
             final scored = nextScore > prevScore;
             final hasWrong = next.wrongP1 != null || next.wrongP2 != null;
             if (wrongChanged && hasWrong) {
-              hapticWrong(enabled: haptics);
+              hapticWrong(enabled: st.haptics);
+              sfxWrong(enabled: st.sound);
             } else if (scored) {
-              hapticMatch(enabled: haptics);
+              hapticMatch(enabled: st.haptics);
+              sfxMatch(enabled: st.sound);
             }
           });
 
