@@ -80,10 +80,10 @@ class HomeScreen extends StatelessWidget {
                         onTap: () => context.go(Routes.twoPlayer),
                       ),
                       const SizedBox(height: 12),
-                      const _MenuButton(
+                      _MenuButton(
                         label: "Settings",
-                        subtitle: "Sound, haptics, account",
-                        comingSoon: true,
+                        subtitle: "Sound, haptics, about",
+                        onTap: () => context.go(Routes.settings),
                       ),
                     ],
                   ),

@@ -15,6 +15,10 @@ void main() {
             path: "/two-player",
             builder: (_, __) => const Scaffold(body: Text("2p screen")),
           ),
+          GoRoute(
+            path: "/settings",
+            builder: (_, __) => const Scaffold(body: Text("settings screen")),
+          ),
         ],
       );
 
@@ -34,7 +38,7 @@ void main() {
     expect(find.text("FOR THE LOVE OF TFI."), findsOneWidget);
     expect(find.byKey(const Key("ad-slot")), findsOneWidget);
     expect(find.text("Play Online"), findsOneWidget);
-    expect(find.text("SOON"), findsNWidgets(2));
+    expect(find.text("SOON"), findsOneWidget);
   });
 
   testWidgets("Play Solo and 2-Player navigate; Play Online does not",

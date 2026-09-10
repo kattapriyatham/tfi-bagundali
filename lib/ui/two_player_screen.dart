@@ -2,10 +2,12 @@ import "package:flutter/material.dart";
 import "package:flutter_riverpod/flutter_riverpod.dart";
 import "package:go_router/go_router.dart";
 
+import "../core/haptics.dart";
 import "../core/router.dart";
 import "../core/theme.dart";
 import "../game/local/two_player_controller.dart";
 import "../game/solo/solo_controller.dart" show deckProvider;
+import "../storage/settings_store.dart";
 import "widgets/card_view.dart";
 import "widgets/countdown_view.dart";
 
@@ -42,6 +44,22 @@ class _TwoPlayerScreenState extends ConsumerState<TwoPlayerScreen> {
               },
             );
           }
+
+          ref.listen(twoPlayerControllerProvider, (prev, next) {
+            if (prev == null) return;
+            final haptics = ref.read(settingsProvider).haptics;
+            final wrongChanged =
+                next.wrongP1 != prev.wrongP1 || next.wrongP2 != prev.wrongP2;
+            final prevScore = prev.state.countP1 + prev.state.countP2;
+            final nextScore = next.state.countP1 + next.state.countP2;
+            final scored = nextScore > prevScore;
+            final hasWrong = next.wrongP1 != null || next.wrongP2 != null;
+            if (wrongChanged && hasWrong) {
+              hapticWrong(enabled: haptics);
+            } else if (scored) {
+              hapticMatch(enabled: haptics);
+            }
+          });
 
           final view = ref.watch(twoPlayerControllerProvider);
 

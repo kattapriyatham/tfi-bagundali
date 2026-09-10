@@ -2,9 +2,11 @@ import "package:flutter/material.dart";
 import "package:flutter_riverpod/flutter_riverpod.dart";
 import "package:go_router/go_router.dart";
 
+import "../core/haptics.dart";
 import "../core/router.dart";
 import "../game/engine/round_state.dart";
 import "../game/solo/solo_controller.dart";
+import "../storage/settings_store.dart";
 import "widgets/card_view.dart";
 import "widgets/countdown_view.dart";
 
@@ -28,7 +30,16 @@ class _SoloGameScreenState extends ConsumerState<SoloGameScreen> {
 
   @override
   Widget build(BuildContext context) {
-    ref.listen(soloControllerProvider, (_, next) {
+    ref.listen(soloControllerProvider, (prev, next) {
+      final haptics = ref.read(settingsProvider).haptics;
+      if (prev != null &&
+          next.lastWrongSymbolId != null &&
+          next.lastWrongSymbolId != prev.lastWrongSymbolId) {
+        hapticWrong(enabled: haptics);
+      } else if (prev != null &&
+          next.round.collected > prev.round.collected) {
+        hapticMatch(enabled: haptics);
+      }
       if (next.complete) _onComplete();
     });
 
