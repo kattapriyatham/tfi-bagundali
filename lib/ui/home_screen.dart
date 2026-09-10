@@ -16,18 +16,20 @@ class HomeScreen extends StatelessWidget {
         children: [
           // Hero art, full bleed.
           Image.asset("assets/fan-ticket.png", fit: BoxFit.cover),
-          // Bottom scrim so the menu reads over the art.
+          // Scrim: dark at top (for the wordmark) and bottom (for the menu),
+          // clearest through the middle where the hero art reads.
           const DecoratedBox(
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
-                stops: [0.0, 0.34, 0.62, 1.0],
+                stops: [0.0, 0.24, 0.46, 0.66, 1.0],
                 colors: [
-                  Color(0x00000000),
-                  Color(0x22000000),
-                  Color(0xCC15100E),
                   Color(0xF2100C0A),
+                  Color(0x99100C0A),
+                  Color(0x1A000000),
+                  Color(0xC015100E),
+                  Color(0xF80D0A08),
                 ],
               ),
             ),
@@ -36,24 +38,22 @@ class HomeScreen extends StatelessWidget {
             child: Column(
               children: [
                 Expanded(
-                  child: Center(
-                    child: SingleChildScrollView(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const SizedBox(height: 20),
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 28),
-                            child: Image.asset(
-                              "assets/title-logo.png",
-                              fit: BoxFit.contain,
-                              height: 140,
-                            ),
+                  child: SingleChildScrollView(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const SizedBox(height: 12),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 32),
+                          child: Image.asset(
+                            "assets/title-logo.png",
+                            fit: BoxFit.contain,
+                            height: 128,
                           ),
-                          const SizedBox(height: 6),
-                          const _Tagline(),
-                        ],
-                      ),
+                        ),
+                        const SizedBox(height: 10),
+                        const _Tagline(),
+                      ],
                     ),
                   ),
                 ),
