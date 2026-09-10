@@ -3,7 +3,7 @@ import "package:flutter_test/flutter_test.dart";
 import "package:tfi_bagundaali/app.dart";
 
 void main() {
-  testWidgets("app boots", (tester) async {
+  testWidgets("app boots to the home route", (tester) async {
     await tester.pumpWidget(const ProviderScope(child: MyApp()));
     await tester.pumpAndSettle();
     expect(find.text("TFI Bagundaali"), findsWidgets);

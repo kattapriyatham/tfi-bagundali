@@ -1,15 +1,17 @@
 import "package:flutter/material.dart";
 
+import "core/router.dart";
+import "core/theme.dart";
+
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
+    return MaterialApp.router(
       title: "TFI Bagundaali",
-      home: Scaffold(
-        body: Center(child: Text("TFI Bagundaali")),
-      ),
+      theme: appTheme(),
+      routerConfig: router,
     );
   }
 }

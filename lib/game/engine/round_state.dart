@@ -1,7 +1,7 @@
 import "package:freezed_annotation/freezed_annotation.dart";
 
 import "../../core/rng.dart";
-import "../../deck/deck_loader.dart";
+import "../../deck/deck.dart";
 import "../../deck/match_rules.dart";
 
 part "round_state.freezed.dart";
