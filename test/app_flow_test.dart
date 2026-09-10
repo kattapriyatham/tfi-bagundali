@@ -35,6 +35,10 @@ void main() {
       tester.element(find.byType(MaterialApp)),
     );
     final ctrl = container.read(soloControllerProvider.notifier);
+    // Re-seed with a fake advancing clock so the tap debounce never blocks
+    // the driven run.
+    var now = DateTime(2026);
+    ctrl.start(seed: 7, clock: () => now);
     var guard = 0;
     while (!container.read(soloControllerProvider).complete && guard++ < 100) {
       final s = container.read(soloControllerProvider).round;
@@ -42,6 +46,7 @@ void main() {
         deck.card(s.heldCardId),
         deck.card(centerCardId(s)),
       );
+      now = now.add(const Duration(seconds: 1));
       ctrl.tap(match);
     }
     await ctrl.committed;
