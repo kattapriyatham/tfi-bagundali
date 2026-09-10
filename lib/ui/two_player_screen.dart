@@ -2,6 +2,7 @@ import "package:flutter/material.dart";
 import "package:flutter_riverpod/flutter_riverpod.dart";
 import "package:go_router/go_router.dart";
 
+import "../ads/ad_service.dart";
 import "../core/haptics.dart";
 import "../core/router.dart";
 import "../core/theme.dart";
@@ -89,7 +90,10 @@ class _TwoPlayerScreenState extends ConsumerState<TwoPlayerScreen> {
                   p2: view.state.countP2,
                   onRematch: () =>
                       ref.read(twoPlayerControllerProvider.notifier).start(),
-                  onHome: () => context.go(Routes.home),
+                  onHome: () {
+                    ref.read(adServiceProvider).showInterstitial();
+                    context.go(Routes.home);
+                  },
                 ),
             ],
           );

@@ -1,11 +1,27 @@
 import "package:flutter/material.dart";
+import "package:flutter_riverpod/flutter_riverpod.dart";
 import "package:go_router/go_router.dart";
 
+import "../ads/ad_service.dart";
+import "../ads/banner_ad_slot.dart";
 import "../core/router.dart";
 import "../core/theme.dart";
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
+
+  @override
+  ConsumerState<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends ConsumerState<HomeScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(adServiceProvider).showColdOpenInterstitial();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -99,13 +115,7 @@ class HomeScreen extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 8),
-                Container(
-                  key: const Key("ad-slot"),
-                  height: 56,
-                  width: double.infinity,
-                  alignment: Alignment.center,
-                  color: Colors.black.withValues(alpha: 0.35),
-                ),
+                const BannerAdSlot(),
               ],
             ),
           ),

@@ -20,3 +20,5 @@ linter:
     cascade_invocations: false
     # Conflicts with freezed: `X._()` must precede the factory constructor.
     sort_unnamed_constructors_first: false
+    # Plain TODO comments are fine in this project.
+    flutter_style_todos: false
