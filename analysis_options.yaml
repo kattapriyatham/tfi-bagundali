@@ -17,3 +17,4 @@ linter:
     prefer_relative_imports: true
     # Cosmetic; not enforced.
     sort_pub_dependencies: false
+    cascade_invocations: false
