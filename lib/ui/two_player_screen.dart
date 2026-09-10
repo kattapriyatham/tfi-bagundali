@@ -176,24 +176,30 @@ class _PlayerHalf extends ConsumerWidget {
           ),
           const SizedBox(height: 6),
           Expanded(
+            flex: 4,
             child: Center(
-              child: CardView(
-                card: center,
-                diameter: (w * 0.40).clamp(140.0, 260.0),
-                interactive: false,
-                onSymbolTap: (_) {},
+              child: FittedBox(
+                child: CardView(
+                  card: center,
+                  diameter: (w * 0.36).clamp(140.0, 230.0),
+                  interactive: false,
+                  onSymbolTap: (_) {},
+                ),
               ),
             ),
           ),
           Expanded(
+            flex: 6,
             child: Center(
-              child: CardView(
-                card: held,
-                diameter: (w * 0.56).clamp(200.0, 360.0),
-                wrongSymbolId: wrong >= 0 ? wrong : null,
-                onSymbolTap: (id) => ref
-                    .read(twoPlayerControllerProvider.notifier)
-                    .tap(player, id),
+              child: FittedBox(
+                child: CardView(
+                  card: held,
+                  diameter: (w * 0.52).clamp(200.0, 330.0),
+                  wrongSymbolId: wrong >= 0 ? wrong : null,
+                  onSymbolTap: (id) => ref
+                      .read(twoPlayerControllerProvider.notifier)
+                      .tap(player, id),
+                ),
               ),
             ),
           ),
