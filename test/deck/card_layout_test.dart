@@ -28,7 +28,7 @@ void main() {
       for (final p in layoutForCard(card)) {
         final reach = sqrt(p.x * p.x + p.y * p.y) + kSymbolRadius * p.scale;
         expect(reach, lessThanOrEqualTo(1.001), reason: "card ${card.id}");
-        expect(p.scale, inInclusiveRange(0.7, 1.15));
+        expect(p.scale, inInclusiveRange(0.82, 1.25));
         expect(p.rotationTurns, inInclusiveRange(0.0, 1.0));
       }
     }

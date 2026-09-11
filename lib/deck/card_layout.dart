@@ -3,7 +3,7 @@ import "dart:math";
 import "../core/rng.dart";
 import "models.dart";
 
-const double kSymbolRadius = 0.19;
+const double kSymbolRadius = 0.23;
 
 /// Deterministic scatter layout for a card, keyed on [GameCard.id].
 ///
@@ -23,11 +23,11 @@ List<SymbolPlacement> layoutForCard(GameCard card) {
     var bestGap = -double.infinity;
 
     for (var attempt = 0; attempt < 400; attempt++) {
-      final scale = 0.7 + rng.nextDouble() * 0.45;
+      final scale = 0.82 + rng.nextDouble() * 0.43;
       final maxR = 1.0 - kSymbolRadius * scale;
       final radius = isCentre
-          ? rng.nextDouble() * 0.14 * maxR
-          : (0.52 + rng.nextDouble() * 0.44) * maxR;
+          ? rng.nextDouble() * 0.12 * maxR
+          : (0.46 + rng.nextDouble() * 0.52) * maxR;
       final angle = (isCentre ? 0.0 : (i - 1) / 7 * 2 * pi) +
           (rng.nextDouble() - 0.5) * 0.55;
       final x = cos(angle) * radius;
