@@ -15,6 +15,10 @@ dependencies:
   google_mobile_ads: ^9.0.0
   json_annotation: ^4.9.0
   shared_preferences: ^2.2.3
+  firebase_core: ^4.14.0
+  firebase_auth: ^6.6.1
+  firebase_database: ^12.5.0
+  cloud_firestore: ^6.9.0
 
 dev_dependencies:
   flutter_test:
@@ -39,4 +43,5 @@ flutter:
     - assets/deck.json
     - assets/title-logo.png
     - assets/fan-ticket.png
+    - assets/game-bg.png
     - assets/symbols/
