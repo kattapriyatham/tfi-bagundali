@@ -36,6 +36,16 @@ type still signs with the debug keystore (Flutter template default) — fine
 for sideloading and internal testing; wire a real `signingConfig` (keystore +
 `key.properties`) before shipping to the Play Store.
 
+### Deploy the APK to Google Drive
+
+    ./scripts/deploy_gdrive.sh
+
+Builds a release APK (`--fast`, arm64) and uploads it to `apps/tfi-bagundaali/`
+in Google Drive via `rclone` (remote name `gdrive`) — a release APK is 30MB+
+(40MB+ base64), too large for the chat's Drive tool to take inline. This is
+the "deploy to gdrive" workflow — repeat this script, don't try to inline the
+file through the chat Drive tool.
+
 ## Test
 
     flutter test

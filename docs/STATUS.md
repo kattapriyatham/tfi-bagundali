@@ -66,3 +66,23 @@ emulator (`./scripts/run_dev.sh`).
 cp .env.example .env
 ./scripts/run_dev.sh
 ```
+
+## Release build + deploy to Google Drive
+
+```
+./scripts/build_release.sh --fast      # release APK, arm64 only
+./scripts/deploy_gdrive.sh             # builds + uploads to apps/tfi-bagundaali/
+```
+
+`deploy_gdrive.sh` uploads via the `rclone` CLI (remote `gdrive`, already
+configured on this machine), **not** the chat's Google Drive tool — a release
+APK is 30MB+, 40MB+ once base64-encoded, too large to pass through that tool
+inline. When asked to "deploy to gdrive," run this script rather than
+attempting an inline upload.
+
+Also fixed this session: release builds were crashing on launch
+(`Failed to create an instance of androidx.work.impl.WorkDatabase`) because
+R8 stripped WorkManager/Room classes pulled in transitively by
+`google_mobile_ads`. Fixed with keep rules in
+`android/app/proguard-rules.pro` + explicit `isMinifyEnabled`/
+`isShrinkResources` in `android/app/build.gradle.kts`.
