@@ -21,6 +21,7 @@
 - Solo best-time stats stay exactly as they are today (`lib/storage/best_time_store.dart`, local `SharedPreferences`) — **not** migrated to Firestore by this plan. Only online-game results reach `/users/{uid}/stats`. This is a deliberate scope cut, not an oversight.
 - `lib/game/local/`, `lib/game/solo/`, and their screens are untouched by this plan.
 - Firebase Realtime Database / Cloud Firestore / Authentication do not need to be "enabled" in the Firebase console for Tasks 1–11 — all development and automated tests run against the **Firebase Local Emulator Suite**, which works standalone. Console enablement is only required before Task 12 (manual two-device verification on real infrastructure).
+- **Amendment (discovered during Task 3 execution):** `firebase_auth`/`firebase_database`/`cloud_firestore` are federated plugins that talk to native Android/iOS SDKs over platform channels. Plain `flutter test` runs on the Dart VM with no platform behind it, so any test that touches those plugins fails with a channel error — the Firebase Emulator Suite only replaces the *server* those SDKs talk to, it doesn't give `flutter test` a platform to run on. Confirmed empirically; `flutter test --platform chrome` doesn't help either (this app has no web target — web is an explicit spec non-goal). Every test in this plan that exercises real Firebase plugin behavior (`RoomRepository`, `OnlineInfernoController`, `StatsRepository`, host migration, security rules) therefore lives under `integration_test/`, uses `testWidgets(...)` + `IntegrationTestWidgetsFlutterBinding.ensureInitialized()` (not `test(...)` + `TestWidgetsFlutterBinding`), and runs via `flutter test -d <device> integration_test/...` against a real connected Android emulator (this machine keeps one booted: `emulator-5554`). `scripts/test_online.sh` (Task 2) wraps that invocation together with `firebase emulators:exec`. Any task below written against `test/rooms/..._test.dart` etc. means `integration_test/..._test.dart` instead — same test logic, different binding/location/runner.
 
 ---
 
@@ -250,19 +251,28 @@ service cloud.firestore {
 ```bash
 #!/usr/bin/env bash
 #
-# Runs `flutter test` against a live Firebase Local Emulator Suite instance.
-# Starts the emulators, waits for them, runs tests, always tears down.
+# Runs the online-multiplayer integration tests (real firebase_auth /
+# firebase_database / cloud_firestore plugins) against a live Firebase
+# Local Emulator Suite instance, on a connected Android device/emulator.
+#
+# integration_test needs a real platform — plain `flutter test` runs on
+# the Dart VM with no native platform behind it, so firebase_auth etc.
+# (federated plugins using platform channels) fail with a channel error
+# regardless of whether the emulator is running.
 #
 # Usage:
-#   ./scripts/test_online.sh                    # all tests
-#   ./scripts/test_online.sh test/rooms/         # a subset
+#   ./scripts/test_online.sh                                    # all integration tests
+#   ./scripts/test_online.sh integration_test/anon_auth_test.dart
+#   DEVICE=emulator-5554 ./scripts/test_online.sh
 
 set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
 
+DEVICE="${DEVICE:-emulator-5554}"
+
 firebase emulators:exec \
   --project spndex-37b0d \
-  "flutter test --dart-define=USE_FIREBASE_EMULATOR=true ${*:-test}"
+  "flutter test -d $DEVICE ${*:-integration_test}"
 ```
 
 - [ ] **Step 5: Make it executable**
@@ -275,7 +285,8 @@ Run: `chmod +x scripts/test_online.sh`
 # --- Firebase (online multiplayer) ---
 # Set to true to point the app at a locally running Firebase Local Emulator
 # Suite (`firebase emulators:start`) instead of the real spndex-37b0d
-# project. Automated tests always pass this via scripts/test_online.sh.
+# project, for manual dev runs via scripts/run_dev.sh. Integration tests
+# (scripts/test_online.sh) wire the emulator directly in each test instead.
 USE_FIREBASE_EMULATOR=false
 ```
 
