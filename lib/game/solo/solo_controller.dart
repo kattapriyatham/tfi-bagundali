@@ -61,6 +61,11 @@ class SoloController extends Notifier<SoloView> {
 
   bool get isNewBest => _isNewBest;
 
+  /// When the current run's timer started (first tap), or null before that.
+  /// Exposed so the UI can tick a live stopwatch between correct taps —
+  /// [SoloView.elapsed] itself only updates on a correct tap.
+  DateTime? get firstTapAt => _firstTapAt;
+
   /// Completes once the finished run's best time has been persisted.
   Future<void> get committed => _commitFuture ?? Future<void>.value();
 

@@ -1,3 +1,5 @@
+import "dart:async";
+
 import "package:flutter/material.dart";
 import "package:flutter_riverpod/flutter_riverpod.dart";
 import "package:go_router/go_router.dart";
@@ -22,12 +24,30 @@ class SoloGameScreen extends ConsumerStatefulWidget {
 class _SoloGameScreenState extends ConsumerState<SoloGameScreen> {
   bool _counting = true;
   bool _leaving = false;
+  Timer? _ticker;
 
   Future<void> _onComplete() async {
+    _ticker?.cancel();
     if (_leaving) return;
     _leaving = true;
     await ref.read(soloControllerProvider.notifier).committed;
     if (mounted) context.go(Routes.soloResult);
+  }
+
+  /// Repaints every 100ms so the clock ticks in real time instead of only
+  /// jumping forward on the next correct tap (SoloView.elapsed only updates
+  /// then; this redraws using DateTime.now() in between).
+  void _startTicker() {
+    _ticker?.cancel();
+    _ticker = Timer.periodic(const Duration(milliseconds: 100), (_) {
+      if (mounted) setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _ticker?.cancel();
+    super.dispose();
   }
 
   @override
@@ -62,6 +82,7 @@ class _SoloGameScreenState extends ConsumerState<SoloGameScreen> {
                 onDone: () {
                   setState(() => _counting = false);
                   ref.read(soloControllerProvider.notifier).start();
+                  _startTicker();
                 },
               );
             }
@@ -70,6 +91,11 @@ class _SoloGameScreenState extends ConsumerState<SoloGameScreen> {
             if (view.complete) {
               return const Center(child: CircularProgressIndicator());
             }
+
+            final ctrl = ref.read(soloControllerProvider.notifier);
+            final displayElapsed = ctrl.firstTapAt == null
+                ? Duration.zero
+                : DateTime.now().difference(ctrl.firstTapAt!);
 
             final center = loadedDeck.card(centerCardId(view.round));
             final held = loadedDeck.card(view.round.heldCardId);
@@ -90,7 +116,7 @@ class _SoloGameScreenState extends ConsumerState<SoloGameScreen> {
                         onPressed: () => context.go(Routes.home),
                       ),
                       Text(
-                        _fmt(view.elapsed),
+                        _fmt(displayElapsed),
                         style: const TextStyle(
                           fontSize: 24,
                           fontWeight: FontWeight.w800,
