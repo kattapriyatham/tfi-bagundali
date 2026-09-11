@@ -26,24 +26,40 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.charcoal,
+      backgroundColor: AppColors.ivory,
       body: Stack(
         fit: StackFit.expand,
         children: [
-          // Hero art, full bleed.
-          Image.asset("assets/fan-ticket.png", fit: BoxFit.cover),
-          // Scrim: dark at top (for the wordmark) and bottom (for the menu),
-          // clearest through the middle where the hero art reads.
+          // Ivory base — the top of the screen (behind the wordmark) stays
+          // plain cream, matching docs/home-screen-design.png.
+          const ColoredBox(color: AppColors.ivory),
+          // Hero art fades in starting below the tagline, so the wordmark
+          // sits on clean ivory rather than the busy illustration.
+          ShaderMask(
+            blendMode: BlendMode.dstIn,
+            shaderCallback: (rect) => const LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              stops: [0.0, 0.26, 0.42, 1.0],
+              colors: [
+                Colors.transparent,
+                Colors.transparent,
+                Colors.white,
+                Colors.white,
+              ],
+            ).createShader(rect),
+            child: Image.asset("assets/fan-ticket.png", fit: BoxFit.cover),
+          ),
+          // Dark scrim toward the bottom so the menu cards keep contrast.
           const DecoratedBox(
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
-                stops: [0.0, 0.24, 0.46, 0.66, 1.0],
+                stops: [0.0, 0.5, 0.68, 1.0],
                 colors: [
-                  Color(0xF2100C0A),
-                  Color(0x99100C0A),
-                  Color(0x1A000000),
+                  Colors.transparent,
+                  Colors.transparent,
                   Color(0xC015100E),
                   Color(0xF80D0A08),
                 ],
@@ -131,7 +147,7 @@ class _Tagline extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     const style = TextStyle(
-      color: Color(0xFFF3E9DC),
+      color: AppColors.charcoal,
       fontSize: 15,
       letterSpacing: 2.5,
       fontWeight: FontWeight.w700,
