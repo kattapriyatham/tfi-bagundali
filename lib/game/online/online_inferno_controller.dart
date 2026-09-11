@@ -9,6 +9,7 @@ import "../../profile/stats_repository.dart";
 import "../../rooms/room_models.dart";
 import "../../rooms/room_repository.dart";
 import "../solo/solo_controller.dart" show deckProvider;
+import "host_migration.dart";
 
 /// The room code the controller operates on. Set by the lobby screen
 /// before navigating to the game screen.
@@ -41,7 +42,13 @@ class OnlineInfernoController extends Notifier<AsyncValue<RoomSnapshot>> {
     }
     final repo = ref.watch(roomRepositoryProvider);
     final sub = repo.watchRoom(code).listen(
-          (snap) => state = AsyncValue.data(snap),
+          (snap) {
+            state = AsyncValue.data(snap);
+            final myUid = ref.read(currentUidProvider)();
+            if (shouldIElectMyself(snap, myUid)) {
+              repo.electHost(snap.code, myUid);
+            }
+          },
           onError: (Object e, StackTrace st) => state = AsyncValue.error(e, st),
         );
     ref.onDispose(sub.cancel);

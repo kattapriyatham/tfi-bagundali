@@ -98,6 +98,7 @@ void main() {
           ),
           roomCodeProvider.overrideWith((_) => "ABCDE"),
           firebaseAuthProvider.overrideWithValue(_FakeFirebaseAuth()),
+          currentUidProvider.overrideWithValue(() => "u1"),
         ],
         child: const MaterialApp(home: OnlineGameScreen(code: "ABCDE")),
       ),
