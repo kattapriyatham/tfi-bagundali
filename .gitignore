@@ -55,3 +55,6 @@ android/build/
 *firebase-adminsdk*.json
 google-services.json
 GoogleService-Info.plist
+
+# Firebase emulator debug logs
+*-debug.log
