@@ -26,7 +26,8 @@ Future<({RoomRepository repo, String uid})> client(String appName) async {
   final db = FirebaseDatabase.instanceFor(app: app);
   db.useDatabaseEmulator("localhost", 9000);
   return (
-    repo: RoomRepository(root: db.ref(), currentUid: () => credential.user!.uid),
+    repo:
+        RoomRepository(root: db.ref(), currentUid: () => credential.user!.uid),
     uid: credential.user!.uid,
   );
 }
@@ -54,7 +55,7 @@ void main() {
   testWidgets("joinRoom rejects once the room has left lobby status",
       (tester) async {
     final host = await client("host2");
-    final code = await host.repo.createRoom(maxPlayers: 8);
+    final code = await host.repo.createRoom();
     await host.repo.joinRoom(code, displayName: "Host");
     final p2 = await client("p2-2");
     await p2.repo.joinRoom(code, displayName: "Bob");
@@ -72,7 +73,7 @@ void main() {
 
   testWidgets("watchRoom streams player joins", (tester) async {
     final host = await client("host3");
-    final code = await host.repo.createRoom(maxPlayers: 8);
+    final code = await host.repo.createRoom();
     await host.repo.joinRoom(code, displayName: "Host");
     final events = <int>[];
     final sub =
