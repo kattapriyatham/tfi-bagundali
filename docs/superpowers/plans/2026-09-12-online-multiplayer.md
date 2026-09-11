@@ -758,10 +758,17 @@ git commit -m "feat: add room data models for online multiplayer"
 
 ## Task 6: RoomRepository + real RTDB security rules + emulator tests
 
+**Amendment (discovered during execution):** three real bugs surfaced only under actual emulator testing, not from reading the rules/code:
+1. RTDB `.read` rules only check the exact path and its ancestors, never descendants. `watchRoom` reads the whole `/rooms/{code}` node and `joinRoom` reads all of `/rooms/{code}/players` — both need `.read` granted at the `$code` (room) level itself, not just on leaf fields.
+2. `startGame`'s multi-location update deals cards into *every* player's `currentCardId`, and `writeResult`/host-migration-style writes touch `meta`/`result` on behalf of the room, not just the caller's own uid. A per-uid-only write rule (`auth.uid === $uid`) blocks the host from doing any of this — the whole multi-path `.update()` is rejected if even one touched path fails its rule. Fix: let any current room member write `meta`/`result`, and let the host (specifically) write any player's node.
+3. **The one that actually breaks race resolution:** the Realtime Database client SDK invokes a transaction's callback with `current = null` on its first (optimistic, not-yet-synced) pass, then re-invokes it with the real value once the server responds — this is normal, documented RTDB transaction behavior. `tryAdvance`'s original `if (cur != expectedCenterIndex) return Transaction.abort()` treated that first `null` guess as a confirmed mismatch and aborted immediately, so the transaction *never lived long enough to see the real value*. `createRoom`/`writeResult` don't hit this because their "abort if it already exists" logic happens to converge correctly regardless of guess order. The fix, applied below: only abort on a **non-null, actually-mismatched** `current` — a `null` guess proposes the write anyway and lets the server-side compare-and-swap accept or reject it, triggering the natural retry.
+
+The code and rules below already include all three fixes.
+
 **Files:**
 - Create: `lib/rooms/room_repository.dart`
 - Modify: `database.rules.json` (replace the Task 2 placeholder)
-- Test: `test/rooms/room_repository_test.dart`
+- Test: `integration_test/room_repository_test.dart` (see Global Constraints amendment — plain `flutter test` cannot exercise these plugins)
 
 **Interfaces:**
 - Consumes: `RoomMeta`, `RoomPlayer`, `RoomSnapshot`, `RoomResult` (Task 5); `generateRoomCode`, `kRoomCodeAlphabet` (Task 4).
