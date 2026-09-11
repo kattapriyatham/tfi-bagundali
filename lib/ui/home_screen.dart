@@ -30,34 +30,24 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       body: Stack(
         fit: StackFit.expand,
         children: [
-          // Ivory base — the top of the screen (behind the wordmark) stays
-          // plain cream, matching docs/home-screen-design.png.
-          const ColoredBox(color: AppColors.ivory),
-          // Hero art fades in starting below the tagline, so the wordmark
-          // sits on clean ivory rather than the busy illustration.
-          ShaderMask(
-            blendMode: BlendMode.dstIn,
-            shaderCallback: (rect) => const LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              stops: [0.0, 0.26, 0.42, 1.0],
-              colors: [
-                Colors.transparent,
-                Colors.transparent,
-                Colors.white,
-                Colors.white,
-              ],
-            ).createShader(rect),
-            child: Image.asset("assets/fan-ticket.png", fit: BoxFit.cover),
-          ),
-          // Dark scrim toward the bottom so the menu cards keep contrast.
+          // Hero art at full opacity throughout — the raised hand + tickets
+          // need their own dark surroundings to read (they're lit to glow
+          // against black in the source art; erasing that to flat ivory
+          // washed them out).
+          Image.asset("assets/fan-ticket.png", fit: BoxFit.cover),
+          // Ivory wash at the very top (hides the plain black void behind
+          // the wordmark, easing off by the time the ticket appears) plus
+          // the usual dark scrim toward the bottom for the menu cards.
           const DecoratedBox(
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
-                stops: [0.0, 0.5, 0.68, 1.0],
+                stops: [0.0, 0.05, 0.13, 0.22, 0.5, 0.68, 1.0],
                 colors: [
+                  Color(0xEEFAF7ED),
+                  Color(0xC0FAF7ED),
+                  Color(0x55FAF7ED),
                   Colors.transparent,
                   Colors.transparent,
                   Color(0xC015100E),
@@ -146,12 +136,18 @@ class _Tagline extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // A soft ivory halo keeps the dark text legible even where the wash
+    // has eased off and the art underneath is showing through.
     const style = TextStyle(
       color: AppColors.charcoal,
       fontSize: 15,
       letterSpacing: 2.5,
       fontWeight: FontWeight.w700,
       height: 1.5,
+      shadows: [
+        Shadow(color: AppColors.ivory, blurRadius: 10),
+        Shadow(color: AppColors.ivory, blurRadius: 10),
+      ],
     );
     return const Column(
       children: [
