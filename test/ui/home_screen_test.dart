@@ -36,7 +36,7 @@ void main() {
     await tester.pump();
   }
 
-  testWidgets("shows tagline, ad slot, and coming-soon menu items",
+  testWidgets("shows tagline, ad slot, settings icon, and a coming-soon mode",
       (tester) async {
     await pumpHome(tester);
 
@@ -44,6 +44,7 @@ void main() {
     expect(find.byKey(const Key("ad-slot")), findsOneWidget);
     expect(find.text("Play Online"), findsOneWidget);
     expect(find.text("SOON"), findsOneWidget);
+    expect(find.byTooltip("Settings"), findsOneWidget);
   });
 
   testWidgets("Play Solo and 2-Player navigate; Play Online does not",
@@ -54,12 +55,6 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text("solo screen"), findsNothing);
 
-    // The menu is a horizontal strip — scroll "2-Player" into view first.
-    await tester.dragUntilVisible(
-      find.text("2-Player"),
-      find.byType(ListView),
-      const Offset(-200, 0),
-    );
     await tester.tap(find.text("2-Player"));
     await tester.pumpAndSettle();
     expect(find.text("2p screen"), findsOneWidget);
@@ -70,5 +65,12 @@ void main() {
     await tester.tap(find.text("Play Solo"));
     await tester.pumpAndSettle();
     expect(find.text("solo screen"), findsOneWidget);
+  });
+
+  testWidgets("Settings icon navigates", (tester) async {
+    await pumpHome(tester);
+    await tester.tap(find.byTooltip("Settings"));
+    await tester.pumpAndSettle();
+    expect(find.text("settings screen"), findsOneWidget);
   });
 }

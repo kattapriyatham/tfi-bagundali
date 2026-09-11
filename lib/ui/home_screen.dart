@@ -59,12 +59,23 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           SafeArea(
             child: Column(
               children: [
+                Align(
+                  alignment: Alignment.topRight,
+                  child: IconButton(
+                    onPressed: () => context.go(Routes.settings),
+                    tooltip: "Settings",
+                    icon: const Icon(
+                      Icons.settings_rounded,
+                      color: AppColors.charcoal,
+                    ),
+                  ),
+                ),
                 Expanded(
                   child: SingleChildScrollView(
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const SizedBox(height: 12),
+                        const SizedBox(height: 4),
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 32),
                           child: Image.asset(
@@ -80,43 +91,42 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   ),
                 ),
                 SizedBox(
-                  height: 166,
-                  child: ListView(
-                    scrollDirection: Axis.horizontal,
+                  height: 192,
+                  child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 24),
-                    children: [
-                      _MenuCard(
-                        icon: Icons.bolt_rounded,
-                        label: "Play Solo",
-                        subtitle: "Time Attack Mode",
-                        primary: true,
-                        onTap: () => context.go(Routes.solo),
-                      ),
-                      const SizedBox(width: 12),
-                      const _MenuCard(
-                        icon: Icons.public_rounded,
-                        label: "Play Online",
-                        subtitle: "Play with fans worldwide",
-                        comingSoon: true,
-                      ),
-                      const SizedBox(width: 12),
-                      _MenuCard(
-                        icon: Icons.people_alt_rounded,
-                        label: "2-Player",
-                        subtitle: "Same device, tabletop",
-                        onTap: () => context.go(Routes.twoPlayer),
-                      ),
-                      const SizedBox(width: 12),
-                      _MenuCard(
-                        icon: Icons.settings_rounded,
-                        label: "Settings",
-                        subtitle: "Sound, haptics, about",
-                        onTap: () => context.go(Routes.settings),
-                      ),
-                    ],
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: _MenuCard(
+                            icon: Icons.bolt_rounded,
+                            label: "Play Solo",
+                            subtitle: "Time Attack",
+                            primary: true,
+                            onTap: () => context.go(Routes.solo),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        const Expanded(
+                          child: _MenuCard(
+                            icon: Icons.public_rounded,
+                            label: "Play Online",
+                            subtitle: "With fans worldwide",
+                            comingSoon: true,
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: _MenuCard(
+                            icon: Icons.people_alt_rounded,
+                            label: "2-Player",
+                            subtitle: "Same device",
+                            onTap: () => context.go(Routes.twoPlayer),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-                const SizedBox(height: 8),
                 const SizedBox(height: 4),
                 Text(
                   "A TELUGU CINEMA PARTY GAME",
@@ -169,9 +179,8 @@ class _Tagline extends StatelessWidget {
   }
 }
 
-/// One card in the horizontally-scrolling menu strip. Fixed width/height so
-/// the strip as a whole occupies a constant height regardless of how many
-/// modes are enabled.
+/// One card in the 3-up menu row. Fixed height, fills whatever width its
+/// parent `Expanded` gives it, so the row always occupies a constant height.
 class _MenuCard extends StatelessWidget {
   const _MenuCard({
     required this.icon,
@@ -181,8 +190,6 @@ class _MenuCard extends StatelessWidget {
     this.primary = false,
     this.comingSoon = false,
   });
-
-  static const double width = 158;
 
   final IconData icon;
   final String label;
@@ -211,8 +218,8 @@ class _MenuCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(18),
           onTap: enabled ? onTap : null,
           child: Container(
-            width: width,
-            padding: const EdgeInsets.all(16),
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(18),
               border: primary
