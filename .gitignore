@@ -50,3 +50,8 @@ app.*.map.json
 .env.*.local
 !.env.example
 android/build/
+
+# Firebase secrets — never commit
+*firebase-adminsdk*.json
+google-services.json
+GoogleService-Info.plist

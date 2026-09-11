@@ -6,6 +6,15 @@
 - **Date:** 2026-09-10
 - **Status:** Draft for review
 - **Author:** priyathamkatta@randomwalk.ai (with Claude)
+- **Amendment (2026-09-12):** dropped the two Cloud Functions (`createRoom`,
+  `finishGame`) for v1. Room-code allocation and end-of-game stat writes now
+  happen client-side, guarded by RTDB/Firestore security rules instead of
+  server-trusted code. Rationale: avoids requiring the Blaze billing plan;
+  the game already has no server-authoritative anti-cheat (§1 non-goals), so
+  this doesn't lower the security bar in a way that matters for a
+  play-with-friends party game. Every place below that said "Cloud Function"
+  is updated to the client+rules equivalent. App id also changed post-draft:
+  `io.tfibagundaali.app` (was `ai.randomwalk.*`).
 
 ## 1. Overview
 
@@ -52,23 +61,26 @@ no third-party IP exposure.
 | Durable data | **Cloud Firestore** | User profile + lifetime stats |
 | Auth | Firebase Auth — anonymous, with optional Google / Apple linking | Linking deferred; anonymous is the launch path |
 | Ads | Google AdMob (`google_mobile_ads`) | |
-| Cloud Functions | One only: unique room-code allocation + end-of-game stat write | Kept off the per-tap hot path |
+| Cloud Functions | None for v1 (see amendment) — room-code allocation and end-game stats done client-side, security-rules-gated | Avoids requiring the Blaze plan |
 | Lints | `very_good_analysis` | |
 | Rendering | Plain Flutter widgets + `AnimationController` | No game engine (Flame) — the game is tap hit-testing over a layout of images |
 
 ### Backend approach (decided: "Approach C")
 
 - **RTDB** holds the active game: room, players, deck order, center-pile
-  pointer, round lock. High-frequency small writes; `onDisconnect` auto-cleans
-  a player who drops.
+  pointer. High-frequency small writes; `onDisconnect` auto-cleans a player
+  who drops.
 - **Firestore** holds the user profile and lifetime stats (games played, games
   won, best solo time). Better queries, offline support.
-- **Cloud Function** (`callable`) only for creating a room (allocate a
-  collision-free short code) and for writing final stats when a game ends.
+- **Room creation and end-of-game stats are client-side** (no Cloud
+  Functions in v1 — see amendment): the client runs an RTDB transaction to
+  atomically claim a short code, and each participant writes its own
+  Firestore stats when a game ends. Security rules constrain both writes
+  (see §9) so this isn't wide open.
 - Race resolution for "who tapped first" is client-reported using an RTDB
-  transaction on the round lock (see §6). Acceptable for a play-with-friends
-  party game; no Cloud Function on the tap path (cold starts would spike
-  latency in a reaction game).
+  transaction directly on `deck.centerIndex` (see §6, §8.2). Acceptable for
+  a play-with-friends party game; no server round-trip on the tap path (cold
+  starts would spike latency in a reaction game).
 
 ## 3. Monetization
 
@@ -198,10 +210,7 @@ Path root: `/rooms/{roomCode}`
     maxPlayers    : 8
   deck
     order         : [int x57]        # shuffled card IDs, written by host at game start
-    centerIndex   : int              # index into order of the current center card
-  round
-    lockUid       : string | null    # transaction winner for the current center card
-    resolvedAt    : <server ts> | null
+    centerIndex   : int              # index into order; RTDB-transaction-guarded (see §8.2)
   players/{uid}
     name          : string
     joinedAt      : <server ts>      # also the host-migration order
@@ -233,9 +242,11 @@ Path root: `/rooms/{roomCode}`
     lastPlayedAt : timestamp
 ```
 
-Written from the client for solo results; written by the end-of-game Cloud
-Function for online results (so a rage-quitter still gets credited/debited
-consistently and counts can't be trivially inflated client-side).
+Written from the client for both solo and online results (no Cloud Function
+in v1 — see amendment). Security rules only allow a user to write their own
+`/users/{uid}` doc and only allow `stats` counters to increase, so a
+rage-quitter or a tampered client can inflate their own numbers at worst —
+not another player's.
 
 ## 7. Game flow — local
 
@@ -258,9 +269,11 @@ Most cards when the pile empties wins.
 
 ### 8.1 Room lifecycle
 
-1. **Create:** host calls the `createRoom` Cloud Function → returns a
-   collision-free code (e.g. 5 uppercase letters, ambiguous chars removed).
-   Function writes `/rooms/{code}/meta` with `status = "lobby"`, `hostUid`.
+1. **Create:** host generates a random 5-letter code client-side (uppercase,
+   `O/0/I/1` excluded) and runs an RTDB transaction on
+   `/rooms/{code}/meta`: commit only if the node is currently null, writing
+   `status = "lobby"`, `hostUid = me`. On abort (rare collision), regenerate
+   and retry, bounded at a handful of attempts.
 2. **Join:** player enters code, picks a display name, client writes
    `/rooms/{code}/players/{uid}` and registers `onDisconnect`. Reject if
    `status != "lobby"` or `players` count `>= maxPlayers`.
@@ -270,10 +283,12 @@ Most cards when the pile empties wins.
    `order[i]` to the i-th player by `joinedAt`, sets `centerIndex = playerCount`,
    `status = "countdown"`, then `"playing"` after a 3-2-1.
 5. **Finish:** when `centerIndex` reaches 57, the client that wrote the final
-   advance sets `status = "finished"` and calls the `finishGame` Function,
-   which computes standings, writes `/rooms/{code}/result`, and updates each
-   participant's Firestore stats.
-6. **Rematch:** host resets `deck`, `round`, per-player `count`/`currentCardId`,
+   advance sets `status = "finished"` and writes `/rooms/{code}/result`
+   (standings computed from `players/*/count`, already visible to it via the
+   stream). Each connected client independently writes its own
+   `/users/{uid}/stats` in Firestore once it observes `status == "finished"`
+   — no single client is trusted to write on others' behalf.
+6. **Rematch:** host resets `deck` and per-player `count`/`currentCardId`,
    `status = "countdown"`. Same room, same code. No ad (mid-session).
 
 ### 8.2 Round / match resolution
@@ -285,19 +300,23 @@ Current center card `C = order[centerIndex]`.
    player's `currentCardId` and `C`?
    - Wrong → local "wrong" feedback (shake + brief 500 ms input lockout). No
      network write. Prevents tap-spam races.
-2. Correct → run an **RTDB transaction on `/rooms/{code}/round`**:
-   - If `round.lockUid == null` **and** the client's `expectedCenterIndex`
-     still equals `deck.centerIndex` → set `round.lockUid = myUid`,
-     `resolvedAt = serverTimestamp`. Commit.
-   - Else abort (someone already won this card, or the index moved).
-3. The transaction **winner** performs the advance as a multi-location update:
-   `players/{me}/count += 1`, `players/{me}/currentCardId = C`,
-   `deck.centerIndex += 1`, `round.lockUid = null`, `round.resolvedAt = null`.
-4. Losing clients see `lockUid` briefly set to another uid / index advanced →
-   show a quick "too slow" and re-render for the new center card.
+2. Correct → run an **RTDB transaction directly on
+   `/rooms/{code}/deck/centerIndex`**: if the current value equals the
+   client's `expectedCenterIndex`, set it to `expectedCenterIndex + 1` and
+   commit; otherwise abort. RTDB serializes concurrent transactions on the
+   same path, so this alone guarantees exactly one winner per card — no
+   separate lock node needed (an earlier draft used a `round.lockUid` node
+   for this; dropped as redundant once the transaction target moved to
+   `centerIndex` itself).
+3. The transaction **winner** (the client whose transaction committed)
+   follows up with a plain multi-location update: `players/{me}/count += 1`,
+   `players/{me}/currentCardId = C`.
+4. A losing client's transaction simply fails to commit — it shows a local
+   "too slow" (no network write, nothing to sync) and re-renders once its
+   `/rooms/{code}` stream delivers the new `centerIndex`.
 
-This gives a single authoritative winner per card without a server on the hot
-path. Worst case under perfectly simultaneous taps: RTDB serializes the
+This gives a single authoritative winner per card without a server on the
+tap path. Worst case under perfectly simultaneous taps: RTDB serializes the
 transactions; exactly one commits.
 
 ### 8.3 Disconnect & error handling
@@ -306,12 +325,12 @@ transactions; exactly one commits.
 |---|---|
 | Player loses connection mid-game | `onDisconnect` sets `connected = false`. Their card stays out of play. Game continues for the rest. |
 | Player reconnects | Client re-attaches listener, sets `connected = true`, resumes from current `centerIndex` and their `currentCardId`. |
-| Only one connected player remains | That client sets `status = "finished"`, calls `finishGame`. Remaining player wins by default. |
+| Only one connected player remains | That client sets `status = "finished"` and writes `/rooms/{code}/result` itself. Remaining player wins by default. |
 | **Host** disconnects | Deterministic migration: the connected player with the earliest `joinedAt` becomes host (client-side election; the elected client writes `meta.hostUid = me`). |
 | Host disconnects in lobby with no one else | Room is abandoned; a scheduled Function (or TTL) reaps `lobby` rooms older than 30 min and `finished` rooms older than 1 h. |
-| Transaction contention / RTDB write fails | Retry the transaction up to 3× with backoff; on persistent failure show a non-blocking toast and keep listening (state will still converge from the stream). |
-| Two clients both try to advance (shouldn't happen) | The advance is gated on `lockUid == myUid`; a second attempt no-ops. |
-| Firestore stat write fails | Non-fatal; `finishGame` Function is the source of truth for online, retried server-side. |
+| Transaction contention / RTDB write fails | The `centerIndex` transaction naturally retries itself internally (RTDB behavior); if the whole operation still errors, show a non-blocking toast and keep listening (state will still converge from the stream). |
+| Two clients both try to advance the same card (shouldn't happen) | Impossible by construction — the `centerIndex` transaction only commits once per value; a second attempt targeting the same `expectedCenterIndex` always aborts. |
+| Firestore stat write fails | Non-fatal; retried client-side with backoff. Worst case the player's lifetime stats miss one game — no gameplay impact. |
 | AdMob fails to load / show | Silent no-op. Game never waits on an ad. |
 | Deck asset missing / corrupt | App fails fast at startup with a clear error (should be caught by the regeneration test in CI). |
 
@@ -320,19 +339,24 @@ transactions; exactly one commits.
 **RTDB:**
 
 - `/rooms/{code}/players/{uid}` writable only by `auth.uid == uid`.
-- `/rooms/{code}/meta` writable only by `auth.uid == meta.hostUid` (host
-  migration writes guarded by "previous host not connected").
-- `/rooms/{code}/round` and `/deck/centerIndex`: writable by any authenticated
-  player in `players`, validated (`centerIndex` may only increase by 1;
-  `count` may only increase by 1). Full anti-cheat is out of scope, but the
-  rules block gross tampering.
+- `/rooms/{code}/meta`: creatable by any authenticated user **only when the
+  node doesn't already exist** (`!data.exists()`), which is what makes
+  client-side room creation safe from overwrite races; updates after
+  creation only by `auth.uid == meta.hostUid` (host migration writes guarded
+  by "previous host not connected").
+- `/rooms/{code}/deck/centerIndex`: writable by any authenticated player in
+  `players`, validated to only increase by 1 per write. `players/{uid}/count`
+  likewise validated to only increase by 1. Full anti-cheat is out of scope,
+  but the rules block gross tampering.
+- `/rooms/{code}/result`: writable once (`!data.exists()`) by any player in
+  `players`, only when `meta.status == "finished"`.
 - Reads: any authenticated user who knows the code.
 
 **Firestore:**
 
-- `/users/{uid}` readable/writable by `auth.uid == uid` for profile fields;
-  `stats` writable by the user (solo) and by the Function (online, via Admin
-  SDK, bypasses rules).
+- `/users/{uid}` readable/writable only by `auth.uid == uid`; `stats` fields
+  may only be updated to a value `>=` the current one (monotonic counters),
+  enforced in rules since there's no server-trusted writer in v1.
 
 ## 10. Testing strategy
 
@@ -343,13 +367,13 @@ transactions; exactly one commits.
 | `MatchRules` | Correct/incorrect symbol identification across random card pairs |
 | `InfernoEngine` | Round advance, count updates, end condition, tie-break |
 | `Scoring` | argmax winner, ties |
-| Online repos | Against the **Firebase Emulator Suite** (RTDB + Firestore): room create/join, max-players reject, start deal, two simulated clients racing a transaction → exactly one winner, disconnect flips `connected`, host migration |
+| Online repos | Against the **Firebase Emulator Suite** (RTDB + Firestore): client-side room-create transaction under contention → exactly one winner, join/max-players reject, start deal, two simulated clients racing the `centerIndex` transaction → exactly one winner, disconnect flips `connected`, host migration, result-write-once |
+| Security rules | Emulator rules tests: room create rejected if code exists; `stats` write rejected if it decreases; `result` write rejected before `status == "finished"` or if already written |
 | Widgets | `CardView` tap hit-testing maps to the right symbol; lobby renders player list; results screen |
-| Cloud Functions | `createRoom` uniqueness under contention; `finishGame` standings + stat writes |
 | Manual / device | Two physical devices: full online game, backgrounding, airplane-mode mid-round, host kill |
 
-CI: `flutter analyze`, `flutter test`, Functions unit tests, deck regeneration
-check.
+CI: `flutter analyze`, `flutter test` (incl. emulator-backed security-rules
+tests), deck regeneration check.
 
 ## 11. Milestones
 
@@ -358,10 +382,10 @@ check.
 2. **Solo time-attack** — fully playable single-player loop, timer, local best.
 3. **Firebase bootstrap** — project, anonymous auth, Firestore profile doc,
    emulator wiring for tests.
-4. **Rooms + lobby** — `createRoom` Function, join by code, lobby stream,
-   presence.
+4. **Rooms + lobby** — client-side room-create transaction, join by code,
+   lobby stream, presence.
 5. **Online Inferno** — deck deal, round sync, transaction-based match
-   resolution, results, `finishGame` Function.
+   resolution, client-written results + stats.
 6. **Resilience** — disconnect handling, reconnect, host migration, room reaping.
 7. **Split-screen local 2P**.
 8. **AdMob** — interstitials (cold open, game end), banners (static screens),

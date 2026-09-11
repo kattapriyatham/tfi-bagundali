@@ -1,4 +1,4 @@
-package ai.randomwalk.tfi_bagundaali
+package io.tfibagundaali.app
 
 import io.flutter.embedding.android.FlutterActivity
 
