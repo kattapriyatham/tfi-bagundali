@@ -1,9 +1,11 @@
+import "package:cloud_firestore/cloud_firestore.dart";
 import "package:firebase_auth/firebase_auth.dart";
 import "package:firebase_database/firebase_database.dart";
 import "package:flutter_riverpod/flutter_riverpod.dart";
 
 import "../../deck/deck.dart";
 import "../../deck/match_rules.dart";
+import "../../profile/stats_repository.dart";
 import "../../rooms/room_models.dart";
 import "../../rooms/room_repository.dart";
 import "../solo/solo_controller.dart" show deckProvider;
@@ -19,6 +21,13 @@ final currentUidProvider = Provider<String Function()>(
 final roomRepositoryProvider = Provider<RoomRepository>((ref) {
   return RoomRepository(
     root: FirebaseDatabase.instance.ref(),
+    currentUid: ref.watch(currentUidProvider),
+  );
+});
+
+final statsRepositoryProvider = Provider<StatsRepository>((ref) {
+  return StatsRepository(
+    firestore: FirebaseFirestore.instance,
     currentUid: ref.watch(currentUidProvider),
   );
 });
@@ -58,6 +67,40 @@ class OnlineInfernoController extends Notifier<AsyncValue<RoomSnapshot>> {
       expectedCenterIndex: snap.centerIndex,
       newCenterCardId: center.id,
     );
+  }
+
+  final _statsRecorded = <String>{};
+
+  /// Writes the room result (once, if nobody has yet) and this client's own
+  /// Firestore stats. Safe to call repeatedly — no-ops after the first call
+  /// per room code.
+  Future<void> markResultIfComplete() async {
+    final snap = state.value;
+    if (snap == null || !snap.isComplete) return;
+    if (_statsRecorded.contains(snap.code)) return;
+    _statsRecorded.add(snap.code);
+
+    var result = snap.result;
+    if (result == null) {
+      final standings = {
+        for (final e in snap.players.entries) e.key: e.value.count,
+      };
+      final winnerUid = standings.entries
+          .fold<MapEntry<String, int>?>(
+            null,
+            (best, e) => best == null || e.value > best.value ? e : best,
+          )
+          ?.key;
+      result = RoomResult(winnerUid: winnerUid, standings: standings);
+      await _repo.writeResult(snap.code, result);
+    }
+
+    final myCount = snap.players[_uid]?.count ?? 0;
+    final maxCount = snap.players.values
+        .map((p) => p.count)
+        .fold(0, (a, b) => a > b ? a : b);
+    final won = result.winnerUid == _uid || myCount == maxCount;
+    await ref.read(statsRepositoryProvider).recordOnlineGame(won: won);
   }
 }
 
