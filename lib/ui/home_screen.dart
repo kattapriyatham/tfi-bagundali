@@ -79,30 +79,36 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     ),
                   ),
                 ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(24, 0, 24, 8),
-                  child: Column(
+                SizedBox(
+                  height: 166,
+                  child: ListView(
+                    scrollDirection: Axis.horizontal,
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
                     children: [
-                      _MenuButton(
+                      _MenuCard(
+                        icon: Icons.bolt_rounded,
                         label: "Play Solo",
                         subtitle: "Time Attack Mode",
                         primary: true,
                         onTap: () => context.go(Routes.solo),
                       ),
-                      const SizedBox(height: 12),
-                      const _MenuButton(
+                      const SizedBox(width: 12),
+                      const _MenuCard(
+                        icon: Icons.public_rounded,
                         label: "Play Online",
                         subtitle: "Play with fans worldwide",
                         comingSoon: true,
                       ),
-                      const SizedBox(height: 12),
-                      _MenuButton(
+                      const SizedBox(width: 12),
+                      _MenuCard(
+                        icon: Icons.people_alt_rounded,
                         label: "2-Player",
                         subtitle: "Same device, tabletop",
                         onTap: () => context.go(Routes.twoPlayer),
                       ),
-                      const SizedBox(height: 12),
-                      _MenuButton(
+                      const SizedBox(width: 12),
+                      _MenuCard(
+                        icon: Icons.settings_rounded,
                         label: "Settings",
                         subtitle: "Sound, haptics, about",
                         onTap: () => context.go(Routes.settings),
@@ -110,6 +116,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     ],
                   ),
                 ),
+                const SizedBox(height: 8),
                 const SizedBox(height: 4),
                 Text(
                   "A TELUGU CINEMA PARTY GAME",
@@ -162,8 +169,12 @@ class _Tagline extends StatelessWidget {
   }
 }
 
-class _MenuButton extends StatelessWidget {
-  const _MenuButton({
+/// One card in the horizontally-scrolling menu strip. Fixed width/height so
+/// the strip as a whole occupies a constant height regardless of how many
+/// modes are enabled.
+class _MenuCard extends StatelessWidget {
+  const _MenuCard({
+    required this.icon,
     required this.label,
     required this.subtitle,
     this.onTap,
@@ -171,6 +182,9 @@ class _MenuButton extends StatelessWidget {
     this.comingSoon = false,
   });
 
+  static const double width = 158;
+
+  final IconData icon;
   final String label;
   final String subtitle;
   final VoidCallback? onTap;
@@ -192,48 +206,50 @@ class _MenuButton extends StatelessWidget {
       enabled: enabled,
       child: Material(
         color: bg,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(18),
         child: InkWell(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(18),
           onTap: enabled ? onTap : null,
           child: Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+            width: width,
+            padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(18),
               border: primary
                   ? null
                   : Border.all(color: Colors.white.withValues(alpha: 0.18)),
             ),
-            child: Row(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        label,
-                        style: TextStyle(
-                          color: fg,
-                          fontSize: 18,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        subtitle,
-                        style: TextStyle(
-                          color: fg.withValues(alpha: 0.75),
-                          fontSize: 12,
-                        ),
-                      ),
-                    ],
+                Icon(icon, color: fg, size: 24),
+                const Spacer(),
+                Text(
+                  label,
+                  style: TextStyle(
+                    color: fg,
+                    fontSize: 17,
+                    fontWeight: FontWeight.w800,
                   ),
                 ),
+                const SizedBox(height: 2),
+                Text(
+                  subtitle,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: fg.withValues(alpha: 0.75),
+                    fontSize: 11,
+                    height: 1.25,
+                  ),
+                ),
+                const SizedBox(height: 8),
                 if (comingSoon)
                   Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 3,
+                    ),
                     decoration: BoxDecoration(
                       color: AppColors.mustard.withValues(alpha: 0.85),
                       borderRadius: BorderRadius.circular(10),
@@ -249,7 +265,7 @@ class _MenuButton extends StatelessWidget {
                     ),
                   )
                 else
-                  Icon(Icons.chevron_right, color: fg),
+                  Icon(Icons.chevron_right, color: fg, size: 20),
               ],
             ),
           ),

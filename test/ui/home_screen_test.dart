@@ -54,6 +54,12 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text("solo screen"), findsNothing);
 
+    // The menu is a horizontal strip — scroll "2-Player" into view first.
+    await tester.dragUntilVisible(
+      find.text("2-Player"),
+      find.byType(ListView),
+      const Offset(-200, 0),
+    );
     await tester.tap(find.text("2-Player"));
     await tester.pumpAndSettle();
     expect(find.text("2p screen"), findsOneWidget);
