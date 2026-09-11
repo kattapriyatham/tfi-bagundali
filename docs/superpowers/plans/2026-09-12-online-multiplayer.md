@@ -34,7 +34,7 @@
 - Test: `test/core/online_availability_test.dart`
 
 **Interfaces:**
-- Produces: `bool isOnlinePlatformSupported` (top-level function, pure, takes no args — checks `Platform.isAndroid` via an injectable seam), `onlineAvailableProvider` (`Provider<bool>`), `DefaultFirebaseOptions.currentPlatform` (`FirebaseOptions`, throws `UnsupportedError` on non-Android).
+- Produces: `isOnlinePlatformSupported({TargetPlatform? platform})` (pure function checking `defaultTargetPlatform`, used only to gate the `main.dart` init attempt), `onlineAvailableProvider` (`Provider<bool>`, keyed off `Firebase.apps.isNotEmpty` — see Step 3 for why), `DefaultFirebaseOptions.currentPlatform` (`FirebaseOptions`, throws `UnsupportedError` on non-Android).
 
 - [ ] **Step 1: Add the Firebase packages**
 
@@ -79,32 +79,47 @@ Note the inline comment isn't needed in code — the class doc above covers it. 
 
 - [ ] **Step 3: Add the online-availability provider**
 
+`flutter test`'s binding defaults `defaultTargetPlatform` to `TargetPlatform.android` regardless of the host OS (verified empirically — this is standard Flutter test-host behavior, done so golden tests are OS-independent). That means a provider that re-checks `defaultTargetPlatform` at read time would evaluate `true` inside every widget test, which is wrong here: it would make the home screen's "Play Online" card look enabled in plain widget tests even though no Firebase app ever initialized. So `isOnlinePlatformSupported` (platform-based) stays a narrow helper used only by `main.dart` to decide whether to attempt Firebase init at all — the UI-facing `onlineAvailableProvider` instead checks whether a Firebase app **actually initialized**, which is naturally `false` in any test that doesn't call `Firebase.initializeApp()`:
+
 ```dart
 // lib/core/online_availability.dart
+import "package:firebase_core/firebase_core.dart";
 import "package:flutter/foundation.dart" show TargetPlatform, defaultTargetPlatform;
 import "package:flutter_riverpod/flutter_riverpod.dart";
 
-/// True only where a Firebase app is actually configured (see
-/// `firebase_options.dart` — Android only until an iOS app is registered).
+/// Used only by `main.dart` to decide whether to attempt Firebase init at
+/// all (see `firebase_options.dart` — Android only until an iOS app is
+/// registered). Not used for UI gating — see `onlineAvailableProvider`.
 bool isOnlinePlatformSupported({TargetPlatform? platform}) =>
     (platform ?? defaultTargetPlatform) == TargetPlatform.android;
 
-final onlineAvailableProvider = Provider<bool>((ref) => isOnlinePlatformSupported());
+/// True iff a Firebase app actually initialized successfully. Deliberately
+/// keyed off `Firebase.apps`, not `defaultTargetPlatform` — the latter is
+/// always `TargetPlatform.android` inside `flutter test` regardless of
+/// host OS, which would make a platform-based check always true there.
+final onlineAvailableProvider = Provider<bool>((ref) => Firebase.apps.isNotEmpty);
 ```
 
-- [ ] **Step 4: Write the test**
+- [ ] **Step 4: Write the tests**
 
 ```dart
 // test/core/online_availability_test.dart
 import "package:flutter/foundation.dart";
 import "package:flutter_test/flutter_test.dart";
+import "package:flutter_riverpod/flutter_riverpod.dart";
 import "package:tfi_bagundaali/core/online_availability.dart";
 
 void main() {
-  test("supported only on Android", () {
+  test("isOnlinePlatformSupported is true only on Android", () {
     expect(isOnlinePlatformSupported(platform: TargetPlatform.android), isTrue);
     expect(isOnlinePlatformSupported(platform: TargetPlatform.iOS), isFalse);
     expect(isOnlinePlatformSupported(platform: TargetPlatform.macOS), isFalse);
+  });
+
+  test("onlineAvailableProvider is false with no Firebase app initialized", () {
+    final container = ProviderContainer();
+    addTearDown(container.dispose);
+    expect(container.read(onlineAvailableProvider), isFalse);
   });
 }
 ```
@@ -112,7 +127,7 @@ void main() {
 - [ ] **Step 5: Run the test**
 
 Run: `flutter test test/core/online_availability_test.dart`
-Expected: PASS (2 assertions).
+Expected: PASS (2 tests).
 
 - [ ] **Step 6: Wire guarded init into `main.dart`**
 
@@ -2196,12 +2211,12 @@ git commit -m "feat: add online game screen with result view and stats recording
 
 Add the import `import "../core/online_availability.dart";`.
 
-- [ ] **Step 2: Check the existing home screen test for an assumption this breaks**
+- [ ] **Step 2: Confirm the existing home screen tests still pass unchanged**
 
-Read `test/ui/home_screen_test.dart` first — if it asserts `find.text("SOON")` unconditionally (expecting "Play Online" to always show the coming-soon badge), that assertion is now platform-dependent (`onlineAvailableProvider` is `false` on the `flutter test` host platform, which isn't Android, so the badge should still show — meaning the existing test likely keeps passing as-is). Run it first to confirm before touching it:
+`test/ui/home_screen_test.dart` asserts `find.text("SOON")` unconditionally and that tapping "Play Online" doesn't navigate. Neither test overrides `Firebase.initializeApp` or `onlineAvailableProvider`, and no widget test calls `main()`, so `Firebase.apps` stays empty and `onlineAvailableProvider` reads `false` — the card keeps rendering as coming-soon exactly as before.
 
 Run: `flutter test test/ui/home_screen_test.dart`
-Expected: PASS unchanged, because `onlineAvailableProvider` evaluates to `false` under the test host's `defaultTargetPlatform` (not Android), so "Play Online" still renders as coming-soon.
+Expected: PASS unchanged (both existing tests).
 
 - [ ] **Step 3: Add a test for the enabled case**
 
