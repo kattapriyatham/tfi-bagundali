@@ -2,6 +2,7 @@ import "package:flutter/material.dart";
 import "package:flutter_riverpod/flutter_riverpod.dart";
 import "package:flutter_test/flutter_test.dart";
 import "package:go_router/go_router.dart";
+import "package:tfi_bagundaali/core/online_availability.dart";
 import "package:tfi_bagundaali/ui/home_screen.dart";
 
 void main() {
@@ -23,13 +24,17 @@ void main() {
         ],
       );
 
-  Future<void> pumpHome(WidgetTester tester) async {
+  Future<void> pumpHome(
+    WidgetTester tester, {
+    List<Override> overrides = const [],
+  }) async {
     tester.view.physicalSize = const Size(1080, 2400);
     tester.view.devicePixelRatio = 3;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
     await tester.pumpWidget(
       ProviderScope(
+        overrides: overrides,
         child: MaterialApp.router(routerConfig: buildRouter()),
       ),
     );
@@ -72,5 +77,14 @@ void main() {
     await tester.tap(find.byTooltip("Settings"));
     await tester.pumpAndSettle();
     expect(find.text("settings screen"), findsOneWidget);
+  });
+
+  testWidgets("Play Online is enabled when onlineAvailableProvider is true",
+      (tester) async {
+    await pumpHome(
+      tester,
+      overrides: [onlineAvailableProvider.overrideWithValue(true)],
+    );
+    expect(find.text("SOON"), findsNothing);
   });
 }

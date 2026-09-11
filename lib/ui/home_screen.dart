@@ -4,6 +4,7 @@ import "package:go_router/go_router.dart";
 
 import "../ads/ad_service.dart";
 import "../ads/banner_ad_slot.dart";
+import "../core/online_availability.dart";
 import "../core/router.dart";
 import "../core/theme.dart";
 
@@ -106,12 +107,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           ),
                         ),
                         const SizedBox(width: 10),
-                        const Expanded(
-                          child: _MenuCard(
-                            icon: Icons.public_rounded,
-                            label: "Play Online",
-                            subtitle: "With fans worldwide",
-                            comingSoon: true,
+                        Expanded(
+                          child: Consumer(
+                            builder: (context, ref, _) {
+                              final available =
+                                  ref.watch(onlineAvailableProvider);
+                              return _MenuCard(
+                                icon: Icons.public_rounded,
+                                label: "Play Online",
+                                subtitle: "With fans worldwide",
+                                comingSoon: !available,
+                                onTap: available
+                                    ? () => context.go(Routes.online)
+                                    : null,
+                              );
+                            },
                           ),
                         ),
                         const SizedBox(width: 10),
