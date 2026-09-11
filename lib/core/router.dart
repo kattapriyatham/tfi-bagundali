@@ -1,6 +1,8 @@
 import "package:go_router/go_router.dart";
 
 import "../ui/home_screen.dart";
+import "../ui/online/create_join_screen.dart";
+import "../ui/online/online_lobby_screen.dart";
 import "../ui/settings_screen.dart";
 import "../ui/solo_game_screen.dart";
 import "../ui/solo_result_screen.dart";
@@ -12,6 +14,9 @@ abstract final class Routes {
   static const soloResult = "/solo/result";
   static const twoPlayer = "/two-player";
   static const settings = "/settings";
+  static const online = "/online";
+  static String onlineLobby(String code) => "/online/lobby/$code";
+  static String onlineGame(String code) => "/online/game/$code";
 }
 
 final router = GoRouter(
@@ -30,6 +35,12 @@ final router = GoRouter(
     GoRoute(
       path: Routes.settings,
       builder: (_, __) => const SettingsScreen(),
+    ),
+    GoRoute(path: Routes.online, builder: (_, __) => const CreateJoinScreen()),
+    GoRoute(
+      path: "/online/lobby/:code",
+      builder: (_, state) =>
+          OnlineLobbyScreen(code: state.pathParameters["code"]!),
     ),
   ],
 );
