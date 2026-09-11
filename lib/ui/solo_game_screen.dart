@@ -5,6 +5,7 @@ import "package:go_router/go_router.dart";
 import "../core/haptics.dart";
 import "../core/router.dart";
 import "../core/sound.dart";
+import "../core/theme.dart";
 import "../game/engine/round_state.dart";
 import "../game/solo/solo_controller.dart";
 import "../storage/settings_store.dart";
@@ -73,8 +74,9 @@ class _SoloGameScreenState extends ConsumerState<SoloGameScreen> {
             final center = loadedDeck.card(centerCardId(view.round));
             final held = loadedDeck.card(view.round.heldCardId);
             final w = MediaQuery.sizeOf(context).width;
-            final centerD = (w * 0.52).clamp(180.0, 320.0);
-            final heldD = (w * 0.92).clamp(280.0, 460.0);
+            // Reference (centre pile) and your card are the same size —
+            // only the ring colour + label tell them apart.
+            final cardD = (w * 0.74).clamp(220.0, 360.0);
 
             return Column(
               children: [
@@ -100,38 +102,47 @@ class _SoloGameScreenState extends ConsumerState<SoloGameScreen> {
                   ),
                 ),
                 Expanded(
-                  flex: 4,
                   child: Center(
-                    child: AnimatedSwitcher(
-                      duration: const Duration(milliseconds: 220),
-                      transitionBuilder: (c, a) =>
-                          ScaleTransition(scale: a, child: c),
-                      child: CardView(
-                        key: ValueKey("center-${center.id}"),
-                        card: center,
-                        diameter: centerD,
-                        interactive: false,
-                        onSymbolTap: (_) {},
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 220),
+                        transitionBuilder: (c, a) =>
+                            ScaleTransition(scale: a, child: c),
+                        child: CardView(
+                          key: ValueKey("center-${center.id}"),
+                          card: center,
+                          diameter: cardD,
+                          interactive: false,
+                          accent: AppColors.mustard,
+                          label: "CENTER",
+                          onSymbolTap: (_) {},
+                        ),
                       ),
                     ),
                   ),
                 ),
                 Expanded(
-                  flex: 6,
                   child: Center(
-                    child: AnimatedSwitcher(
-                      duration: const Duration(milliseconds: 220),
-                      transitionBuilder: (c, a) => ScaleTransition(
-                        scale: Tween<double>(begin: 0.86, end: 1).animate(a),
-                        child: FadeTransition(opacity: a, child: c),
-                      ),
-                      child: CardView(
-                        key: ValueKey("held-${held.id}"),
-                        card: held,
-                        diameter: heldD,
-                        wrongSymbolId: view.lastWrongSymbolId,
-                        onSymbolTap: (id) =>
-                            ref.read(soloControllerProvider.notifier).tap(id),
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 220),
+                        transitionBuilder: (c, a) => ScaleTransition(
+                          scale: Tween<double>(begin: 0.86, end: 1).animate(a),
+                          child: FadeTransition(opacity: a, child: c),
+                        ),
+                        child: CardView(
+                          key: ValueKey("held-${held.id}"),
+                          card: held,
+                          diameter: cardD,
+                          accent: AppColors.cinemaRed,
+                          label: "YOUR CARD",
+                          wrongSymbolId: view.lastWrongSymbolId,
+                          onSymbolTap: (id) => ref
+                              .read(soloControllerProvider.notifier)
+                              .tap(id),
+                        ),
                       ),
                     ),
                   ),

@@ -14,6 +14,8 @@ class CardView extends StatelessWidget {
     this.flashSymbolId,
     this.wrongSymbolId,
     this.interactive = true,
+    this.accent,
+    this.label,
     super.key,
   });
 
@@ -24,16 +26,25 @@ class CardView extends StatelessWidget {
   final int? wrongSymbolId;
   final bool interactive;
 
+  /// Ring colour distinguishing this card's role (e.g. "the centre pile"
+  /// vs "your card") when two same-sized cards are shown side by side.
+  final Color? accent;
+
+  /// Small pill caption shown above the card, e.g. "CENTER" / "YOUR CARD".
+  /// Requires [accent] (used as the pill's background).
+  final String? label;
+
   @override
   Widget build(BuildContext context) {
     final placements = layoutForCard(card);
     final radius = diameter / 2;
 
-    return DecoratedBox(
-      decoration: const BoxDecoration(
-        color: Color(0xFFFAF7ED),
+    final circle = DecoratedBox(
+      decoration: BoxDecoration(
+        color: const Color(0xFFFAF7ED),
         shape: BoxShape.circle,
-        boxShadow: [
+        border: accent == null ? null : Border.all(color: accent!, width: 4),
+        boxShadow: const [
           BoxShadow(
             color: Color(0x33000000),
             blurRadius: 12,
@@ -83,6 +94,32 @@ class CardView extends StatelessWidget {
           ],
         ),
       ),
+    );
+
+    if (label == null) return circle;
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+          decoration: BoxDecoration(
+            color: accent,
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Text(
+            label!,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 11,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 1,
+            ),
+          ),
+        ),
+        const SizedBox(height: 6),
+        circle,
+      ],
     );
   }
 }

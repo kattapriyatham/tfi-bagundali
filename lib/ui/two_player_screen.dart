@@ -175,26 +175,31 @@ class _PlayerHalf extends ConsumerWidget {
             ],
           ),
           const SizedBox(height: 6),
+          // Same size for both — the ring colour + label tell them apart.
           Expanded(
-            flex: 4,
             child: Center(
               child: FittedBox(
+                fit: BoxFit.scaleDown,
                 child: CardView(
                   card: center,
-                  diameter: (w * 0.36).clamp(140.0, 230.0),
+                  diameter: (w * 0.46).clamp(160.0, 260.0),
                   interactive: false,
+                  accent: AppColors.mustard,
+                  label: "CENTER",
                   onSymbolTap: (_) {},
                 ),
               ),
             ),
           ),
           Expanded(
-            flex: 6,
             child: Center(
               child: FittedBox(
+                fit: BoxFit.scaleDown,
                 child: CardView(
                   card: held,
-                  diameter: (w * 0.52).clamp(200.0, 330.0),
+                  diameter: (w * 0.46).clamp(160.0, 260.0),
+                  accent: accent,
+                  label: "YOU",
                   wrongSymbolId: wrong >= 0 ? wrong : null,
                   onSymbolTap: (id) => ref
                       .read(twoPlayerControllerProvider.notifier)
