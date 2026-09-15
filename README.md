@@ -4,9 +4,14 @@ A Tollywood-themed Spot It / Dobble card game (Flutter, iOS + Android).
 
 ## Status
 
-Offline solo time-attack and local split-screen 2-player are built and
-working, with real Tollywood sticker art and AdMob (test ids) wired in.
-Online multiplayer (Plan 2) is not started — see `docs/STATUS.md`.
+Solo time-attack, local split-screen 2-player, and online multiplayer
+(create/join rooms, synced rounds, host migration on disconnect) are all
+built and working, with real Tollywood sticker art and production AdMob ids
+wired in. See `docs/STATUS.md` for a running log of build decisions.
+
+Play Store launch prep — signing, privacy policy, store listing — is
+tracked in `PLAYSTORE_CHECKLIST.md`. The marketing/privacy-policy site lives
+in `web/` (deployed separately to Vercel, not part of the Flutter build).
 
 ## Develop
 
@@ -32,9 +37,9 @@ Android emulator named by `ANDROID_EMULATOR` if none is attached, and runs.
     ./scripts/build_release.sh --bundle   # AAB for the Play Store
 
 Same `.env` → `--dart-define` handling as `run_dev.sh`. The `release` build
-type still signs with the debug keystore (Flutter template default) — fine
-for sideloading and internal testing; wire a real `signingConfig` (keystore +
-`key.properties`) before shipping to the Play Store.
+type signs with the real upload keystore via `android/key.properties`
+(gitignored, not committed — see `PLAYSTORE_CHECKLIST.md` for where the
+keystore lives and how to regenerate this file on a new machine).
 
 ### Deploy the APK to Google Drive
 
