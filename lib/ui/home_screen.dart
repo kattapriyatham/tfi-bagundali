@@ -4,9 +4,13 @@ import "package:go_router/go_router.dart";
 
 import "../ads/ad_service.dart";
 import "../ads/banner_ad_slot.dart";
+import "../auth/anon_auth.dart";
 import "../core/online_availability.dart";
 import "../core/router.dart";
 import "../core/theme.dart";
+import "../game/online/online_inferno_controller.dart"
+    show roomRepositoryProvider;
+import "../storage/active_room_store.dart";
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -16,12 +20,43 @@ class HomeScreen extends ConsumerStatefulWidget {
 }
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
+  String? _rejoinCode;
+  bool _rejoinIsLobby = false;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(adServiceProvider).showColdOpenInterstitial();
     });
+    _checkForActiveRoom();
+  }
+
+  Future<void> _checkForActiveRoom() async {
+    final code = await ref.read(activeRoomProvider.notifier).readStored();
+    if (code == null || !mounted) return;
+
+    try {
+      await ensureSignedIn(ref.read(firebaseAuthProvider));
+      final myUid = ref.read(firebaseAuthProvider).currentUser?.uid;
+      final room = await ref.read(roomRepositoryProvider).getRoom(code);
+      final stillIn = room.exists &&
+          room.meta.status != "finished" &&
+          room.players.containsKey(myUid);
+      if (!stillIn) {
+        await ref.read(activeRoomProvider.notifier).clear();
+        return;
+      }
+      if (mounted) {
+        setState(() {
+          _rejoinCode = code;
+          _rejoinIsLobby = room.meta.status == "lobby";
+        });
+      }
+    } catch (_) {
+      // Offline or lookup failed — leave the stored code alone and just
+      // don't show the banner this time; a later launch can retry.
+    }
   }
 
   @override
@@ -71,6 +106,22 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     ),
                   ),
                 ),
+                if (_rejoinCode != null)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    child: _RejoinBanner(
+                      code: _rejoinCode!,
+                      isLobby: _rejoinIsLobby,
+                      onTap: () {
+                        final code = _rejoinCode!;
+                        context.go(
+                          _rejoinIsLobby
+                              ? Routes.onlineLobby(code)
+                              : Routes.onlineGame(code),
+                        );
+                      },
+                    ),
+                  ),
                 Expanded(
                   child: SingleChildScrollView(
                     child: Column(
@@ -153,6 +204,55 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Lets a player who was disconnected (backgrounded, killed, or otherwise
+/// dropped out) get back to the online room they were last in — there's
+/// otherwise no path back to it once its route is gone.
+class _RejoinBanner extends StatelessWidget {
+  const _RejoinBanner({
+    required this.code,
+    required this.isLobby,
+    required this.onTap,
+  });
+
+  final String code;
+  final bool isLobby;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: AppColors.cinemaRed,
+      borderRadius: BorderRadius.circular(14),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(14),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: Row(
+            children: [
+              const Icon(Icons.replay_rounded, color: Colors.white, size: 20),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  isLobby
+                      ? "Rejoin room $code"
+                      : "Rejoin your game in room $code",
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 14,
+                  ),
+                ),
+              ),
+              const Icon(Icons.chevron_right, color: Colors.white),
+            ],
+          ),
+        ),
       ),
     );
   }

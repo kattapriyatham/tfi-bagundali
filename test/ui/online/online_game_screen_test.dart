@@ -2,6 +2,7 @@ import "package:firebase_auth/firebase_auth.dart";
 import "package:flutter/material.dart";
 import "package:flutter_riverpod/flutter_riverpod.dart";
 import "package:flutter_test/flutter_test.dart";
+import "package:shared_preferences/shared_preferences.dart";
 import "package:tfi_bagundali/auth/anon_auth.dart";
 import "package:tfi_bagundali/deck/deck_loader.dart";
 import "package:tfi_bagundali/deck/dobble.dart";
@@ -24,6 +25,10 @@ class _FixedRoomRepository implements RoomRepository {
   Stream<RoomSnapshot> watchRoom(String code) => Stream.value(snapshot);
   @override
   Future<void> setConnected(String code, {required bool connected}) async {}
+  @override
+  Future<void> reconnect(String code) async {}
+  @override
+  Future<RoomSnapshot> getRoom(String code) async => snapshot;
   @override
   Future<void> startGame(
     String code, {
@@ -65,6 +70,7 @@ void main() {
 
   testWidgets("renders the center card and player scores mid-game",
       (tester) async {
+    SharedPreferences.setMockInitialValues({});
     const snapshot = RoomSnapshot(
       code: "ABCDE",
       meta: RoomMeta(status: "playing", hostUid: "u1", maxPlayers: 2),

@@ -39,6 +39,13 @@ class _FakeRoomRepository implements RoomRepository {
   Future<void> setConnected(String code, {required bool connected}) async {}
 
   @override
+  Future<void> reconnect(String code) async {}
+
+  @override
+  Future<RoomSnapshot> getRoom(String code) async =>
+      rooms[code] ?? RoomSnapshot.empty(code);
+
+  @override
   Future<void> startGame(
     String code, {
     required List<int> deckOrder,

@@ -8,15 +8,46 @@ import "../../game/engine/round_state.dart" show shuffledDeckOrder;
 import "../../game/online/online_inferno_controller.dart"
     show roomRepositoryProvider;
 import "../../rooms/room_models.dart";
+import "../../storage/active_room_store.dart";
 import "../widgets/quit_confirm.dart";
 
-class OnlineLobbyScreen extends ConsumerWidget {
+class OnlineLobbyScreen extends ConsumerStatefulWidget {
   const OnlineLobbyScreen({required this.code, super.key});
 
   final String code;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<OnlineLobbyScreen> createState() => _OnlineLobbyScreenState();
+}
+
+class _OnlineLobbyScreenState extends ConsumerState<OnlineLobbyScreen>
+    with WidgetsBindingObserver {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    Future.microtask(() {
+      ref.read(activeRoomProvider.notifier).save(widget.code);
+      ref.read(roomRepositoryProvider).reconnect(widget.code);
+    });
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      ref.read(roomRepositoryProvider).reconnect(widget.code);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final code = widget.code;
     final repo = ref.watch(roomRepositoryProvider);
     final myUid = ref.watch(firebaseAuthProvider).currentUser?.uid;
 
@@ -33,6 +64,7 @@ class OnlineLobbyScreen extends ConsumerWidget {
             );
             if (quit) {
               await repo.setConnected(code, connected: false);
+              await ref.read(activeRoomProvider.notifier).clear();
               if (context.mounted) context.go(Routes.home);
             }
           },

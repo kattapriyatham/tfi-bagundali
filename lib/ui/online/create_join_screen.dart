@@ -6,6 +6,7 @@ import "../../auth/anon_auth.dart";
 import "../../core/router.dart";
 import "../../game/online/online_inferno_controller.dart"
     show roomRepositoryProvider;
+import "../../storage/active_room_store.dart";
 
 class CreateJoinScreen extends ConsumerStatefulWidget {
   const CreateJoinScreen({super.key});
@@ -37,6 +38,7 @@ class _CreateJoinScreenState extends ConsumerState<CreateJoinScreen> {
       final repo = ref.read(roomRepositoryProvider);
       final code = await repo.createRoom();
       await repo.joinRoom(code, displayName: _nameController.text.trim());
+      await ref.read(activeRoomProvider.notifier).save(code);
       if (mounted) context.go(Routes.onlineLobby(code));
     } catch (e) {
       setState(() => _error = "Couldn't create a room: $e");
@@ -61,6 +63,7 @@ class _CreateJoinScreenState extends ConsumerState<CreateJoinScreen> {
             code,
             displayName: _nameController.text.trim(),
           );
+      await ref.read(activeRoomProvider.notifier).save(code);
       if (mounted) context.go(Routes.onlineLobby(code));
     } catch (e) {
       setState(() => _error = "Couldn't join: $e");

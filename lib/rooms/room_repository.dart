@@ -81,8 +81,24 @@ class RoomRepository {
         (e) => RoomSnapshot.fromMap(code, (e.snapshot.value as Map?)?.cast()),
       );
 
+  Future<RoomSnapshot> getRoom(String code) async {
+    final snap = await _room(code).get();
+    return RoomSnapshot.fromMap(code, (snap.value as Map?)?.cast());
+  }
+
   Future<void> setConnected(String code, {required bool connected}) =>
       _room(code).child("players/${_uid()}/connected").set(connected);
+
+  /// Marks the player connected again and re-arms the disconnect hook.
+  /// `onDisconnect()` handlers are bound to one socket connection — after
+  /// a background/foreground cycle drops and re-establishes that socket,
+  /// the old hook is gone, so it must be set again or a later disconnect
+  /// silently leaves `connected` stuck at whatever it last was.
+  Future<void> reconnect(String code) async {
+    final connectedRef = _room(code).child("players/${_uid()}/connected");
+    await connectedRef.set(true);
+    await connectedRef.onDisconnect().set(false);
+  }
 
   Future<void> startGame(
     String code, {

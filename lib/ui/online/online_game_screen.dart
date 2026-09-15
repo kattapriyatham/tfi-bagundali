@@ -7,6 +7,7 @@ import "../../core/router.dart";
 import "../../game/online/online_inferno_controller.dart";
 import "../../game/solo/solo_controller.dart" show deckProvider;
 import "../../rooms/room_models.dart" show RoomPlayer;
+import "../../storage/active_room_store.dart";
 import "../widgets/card_view.dart";
 import "../widgets/quit_confirm.dart";
 
@@ -19,13 +20,30 @@ class OnlineGameScreen extends ConsumerStatefulWidget {
   ConsumerState<OnlineGameScreen> createState() => _OnlineGameScreenState();
 }
 
-class _OnlineGameScreenState extends ConsumerState<OnlineGameScreen> {
+class _OnlineGameScreenState extends ConsumerState<OnlineGameScreen>
+    with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
-    Future.microtask(
-      () => ref.read(roomCodeProvider.notifier).state = widget.code,
-    );
+    WidgetsBinding.instance.addObserver(this);
+    Future.microtask(() {
+      ref.read(roomCodeProvider.notifier).state = widget.code;
+      ref.read(activeRoomProvider.notifier).save(widget.code);
+      ref.read(roomRepositoryProvider).reconnect(widget.code);
+    });
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      ref.read(roomRepositoryProvider).reconnect(widget.code);
+    }
   }
 
   @override
@@ -60,7 +78,10 @@ class _OnlineGameScreenState extends ConsumerState<OnlineGameScreen> {
                 return _ResultView(
                   standings: standings,
                   myUid: myUid,
-                  onHome: () => context.go(Routes.home),
+                  onHome: () {
+                    ref.read(activeRoomProvider.notifier).clear();
+                    context.go(Routes.home);
+                  },
                 );
               }
 
@@ -71,6 +92,16 @@ class _OnlineGameScreenState extends ConsumerState<OnlineGameScreen> {
                       child: CardView(
                         card: loadedDeck.card(snap.centerCardId),
                         accent: Colors.amber,
+                        interactive: false,
+                        onSymbolTap: (_) {},
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    child: Center(
+                      child: CardView(
+                        card: loadedDeck.card(me.currentCardId),
+                        accent: Colors.teal,
                         onSymbolTap: (id) => ref
                             .read(onlineInfernoControllerProvider.notifier)
                             .tap(id),
@@ -109,7 +140,13 @@ class _OnlineGameScreenState extends ConsumerState<OnlineGameScreen> {
                         title: "Quit game?",
                         message: "You'll leave this online game.",
                       );
-                      if (quit && context.mounted) context.go(Routes.home);
+                      if (quit) {
+                        await ref
+                            .read(roomRepositoryProvider)
+                            .setConnected(widget.code, connected: false);
+                        await ref.read(activeRoomProvider.notifier).clear();
+                        if (context.mounted) context.go(Routes.home);
+                      }
                     },
                   ),
                 ],
