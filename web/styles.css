@@ -64,9 +64,9 @@ a {
 
 .hero-content {
   position: absolute;
-  top: 6%;
+  top: 50%;
   left: 50%;
-  transform: translateX(-50%);
+  transform: translate(-50%, -50%);
   z-index: 2;
   text-align: center;
   width: min(90%, 480px);
