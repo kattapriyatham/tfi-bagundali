@@ -32,6 +32,7 @@ void main() {
     }
     await tester.pumpAndSettle();
 
-    expect(find.text("Cards Left 56/56"), findsOneWidget);
+    expect(find.text("Cards Left"), findsOneWidget);
+    expect(find.text("56"), findsOneWidget);
   });
 }

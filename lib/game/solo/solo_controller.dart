@@ -61,9 +61,10 @@ class SoloController extends Notifier<SoloView> {
 
   bool get isNewBest => _isNewBest;
 
-  /// When the current run's timer started (first tap), or null before that.
-  /// Exposed so the UI can tick a live stopwatch between correct taps —
-  /// [SoloView.elapsed] itself only updates on a correct tap.
+  /// When the current run's timer started (round start), or null before a
+  /// round has been started. Exposed so the UI can tick a live stopwatch
+  /// between correct taps — [SoloView.elapsed] itself only updates on a
+  /// correct tap.
   DateTime? get firstTapAt => _firstTapAt;
 
   /// Completes once the finished run's best time has been persisted.
@@ -79,7 +80,7 @@ class SoloController extends Notifier<SoloView> {
 
   void start({int? seed, DateTime Function()? clock}) {
     _clock = clock ?? DateTime.now;
-    _firstTapAt = null;
+    _firstTapAt = _clock();
     _lockUntil = null;
     _isNewBest = false;
     _commitFuture = null;
@@ -98,7 +99,7 @@ class SoloController extends Notifier<SoloView> {
     if (state.complete) return;
     final now = _clock();
     if (_lockUntil != null && now.isBefore(_lockUntil!)) return;
-    _firstTapAt ??= now;
+    _firstTapAt ??= now; // safety net: start() always sets this already
 
     final next =
         applyTap(state: state.round, tappedSymbolId: symbolId, deck: _deck);

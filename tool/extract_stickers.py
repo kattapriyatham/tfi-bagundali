@@ -3,12 +3,14 @@
 
 pack-4-1.png already has a transparent background -> split by alpha blobs.
 
-pack-8-*.png sit on a dark vignette with irregular, slightly overlapping
-layout that automatic segmentation handles badly. Instead we crop
-hand-tuned rectangles and fade each to a soft oval vignette (opaque
-centre, transparent edges) plus a mild dark-pixel knockout. On the ivory
-card each sticker then reads as a framed portrait; box slop is hidden by
-the falloff.
+pack-8-*.png sit on a dark vignette with an irregular, slightly overlapping
+layout, so automatic subject detection is unreliable -- instead we crop
+hand-tuned rectangles (BOXES below, one per sticker) and then run GrabCut
+inside each crop to cut the actual silhouette out, seeded with a
+conservative "definitely background" border and a "probably foreground"
+core matching the hand-tuned box. This replaces the earlier oval-vignette
+fade (which left visible dark/blurred halos around several stickers) with
+a real cutout, matching the clean look of the transparent-source stickers.
 
 Outputs RGBA PNGs to assets/stickers/extracted/ and a debug montage to
 build/sticker_debug/.
@@ -28,6 +30,16 @@ OUT = SRC / "extracted"
 DEBUG = ROOT / "build" / "sticker_debug"
 
 # Hand-tuned boxes (x0, y0, x1, y1) in source pixels for the 1536x1024 sheets.
+# These are the "core" region -- GrabCut is seeded assuming the subject
+# mostly fills this box, with a padded margin around it treated as
+# background.
+# Stickers where GrabCut reliably fuses the subject with an adjacent dark
+# background patch of similar tone (no seeding/morphology tweak separated
+# them cleanly) -- these go straight to the oval-vignette fallback instead.
+FORCE_OVAL: set[tuple[str, int]] = {
+    ("p81", 4), ("p81", 5), ("p82", 7), ("p83", 7),
+}
+
 BOXES: dict[str, list[tuple[int, int, int, int]]] = {
     "p81": [
         (10, 60, 470, 560), (430, 110, 835, 505), (825, 10, 1075, 510),
@@ -57,15 +69,6 @@ def _trim_alpha(rgba: np.ndarray, pad: int = 4) -> np.ndarray:
     return rgba[y0:y1, x0:x1]
 
 
-def _oval_alpha(h: int, w: int, inner: float = 0.70, outer: float = 1.03) -> np.ndarray:
-    yy, xx = np.mgrid[0:h, 0:w].astype(np.float32)
-    ny = (yy - h / 2) / (h / 2)
-    nx = (xx - w / 2) / (w / 2)
-    r = np.sqrt(nx * nx + ny * ny)
-    a = np.clip((outer - r) / (outer - inner), 0.0, 1.0)
-    return (a * a * (3 - 2 * a) * 255).astype(np.uint8)  # smoothstep
-
-
 def split_transparent(path: pathlib.Path, prefix: str) -> list[str]:
     img = cv2.imread(str(path), cv2.IMREAD_UNCHANGED)
     if img.shape[2] == 3:
@@ -88,30 +91,117 @@ def split_transparent(path: pathlib.Path, prefix: str) -> list[str]:
     return names
 
 
-def crop_dark_pack(path: pathlib.Path, prefix: str) -> list[str]:
-    bgr = cv2.imread(str(path), cv2.IMREAD_COLOR)
+def _oval_alpha(h: int, w: int, inner: float = 0.48, outer: float = 0.98) -> np.ndarray:
+    yy, xx = np.mgrid[0:h, 0:w].astype(np.float32)
+    ny, nx = (yy - h / 2) / (h / 2), (xx - w / 2) / (w / 2)
+    r = np.sqrt(nx * nx + ny * ny)
+    a = np.clip((outer - r) / (outer - inner), 0.0, 1.0)
+    return a * a * (3 - 2 * a)  # smoothstep, 0..1
+
+
+def _oval_fallback(bgr: np.ndarray) -> np.ndarray:
+    """Safe fallback when GrabCut leaks background: oval vignette + a
+    brightness/saturation floor so the dark surrounding fades out instead
+    of leaving a hard blob."""
     h, w = bgr.shape[:2]
+    oval = _oval_alpha(h, w)
+    hsv = cv2.cvtColor(bgr, cv2.COLOR_BGR2HSV).astype(np.float32) / 255.0
+    fg = np.clip((hsv[:, :, 2] - 0.16) / 0.30, 0.0, 1.0)
+    fg = np.maximum(fg, np.clip((hsv[:, :, 1] - 0.20) / 0.30, 0.0, 1.0))
+    alpha = np.clip(oval * (0.15 + 0.85 * fg), 0, 1) * 255
+    return cv2.GaussianBlur(alpha.astype(np.uint8), (0, 0), 2.5)
+
+
+def _grabcut_cutout(bgr: np.ndarray, core_frac: float = 0.86) -> np.ndarray | None:
+    """Returns an alpha mask (uint8, 0..255) cutting the subject out of
+    [bgr], seeded with a background border and a foreground core sized
+    [core_frac] of the crop, or None if the result looks like it leaked
+    background (implausibly large / touches most of the border).
+    """
+    h, w = bgr.shape[:2]
+    gc_mask = np.full((h, w), cv2.GC_PR_BGD, np.uint8)
+
+    cx0, cy0 = int(w * (1 - core_frac) / 2), int(h * (1 - core_frac) / 2)
+    cx1, cy1 = w - cx0, h - cy0
+    gc_mask[cy0:cy1, cx0:cx1] = cv2.GC_PR_FGD
+
+    border = max(3, int(min(h, w) * 0.08))
+    gc_mask[:border, :] = cv2.GC_BGD
+    gc_mask[-border:, :] = cv2.GC_BGD
+    gc_mask[:, :border] = cv2.GC_BGD
+    gc_mask[:, -border:] = cv2.GC_BGD
+
+    bgd, fgd = np.zeros((1, 65), np.float64), np.zeros((1, 65), np.float64)
+    try:
+        cv2.grabCut(bgr, gc_mask, None, bgd, fgd, 6, cv2.GC_INIT_WITH_MASK)
+    except cv2.error:
+        return None
+
+    alpha = np.where(
+        (gc_mask == cv2.GC_FGD) | (gc_mask == cv2.GC_PR_FGD), 255, 0
+    ).astype(np.uint8)
+    alpha = cv2.morphologyEx(alpha, cv2.MORPH_CLOSE, np.ones((9, 9), np.uint8))
+
+    # A leaked background patch is usually joined to the real subject by a
+    # thin isthmus. A small open() (5x5, as before) doesn't break that; a
+    # much bigger one does. Find the main blob using a heavy open, then
+    # restore its true (unblocky) edges by masking the original alpha with
+    # a generous dilation of that surviving core -- this keeps the subject's
+    # real silhouette while dropping anything only weakly attached to it.
+    core = cv2.morphologyEx(alpha, cv2.MORPH_OPEN, np.ones((23, 23), np.uint8))
+    n, labels, stats, _ = cv2.connectedComponentsWithStats(core, 8)
+    if n <= 1:
+        return None
+    keep = 1 + int(np.argmax(stats[1:, 4]))
+    seed = np.where(labels == keep, 255, 0).astype(np.uint8)
+    seed = cv2.dilate(seed, np.ones((29, 29), np.uint8))
+    alpha = cv2.bitwise_and(alpha, seed)
+    alpha = cv2.morphologyEx(alpha, cv2.MORPH_OPEN, np.ones((5, 5), np.uint8))
+
+    # Reject implausible cutouts: a real subject inside this padded crop
+    # shouldn't fill most of it, and shouldn't hug the border on every side
+    # (both are signs GrabCut fused the subject with leaked background).
+    coverage = float((alpha > 0).mean())
+    border_hit = sum(
+        [
+            alpha[0, :].mean() > 40,
+            alpha[-1, :].mean() > 40,
+            alpha[:, 0].mean() > 40,
+            alpha[:, -1].mean() > 40,
+        ]
+    )
+    if coverage < 0.03 or coverage > 0.62 or border_hit >= 3:
+        return None
+
+    return cv2.GaussianBlur(alpha, (0, 0), 1.2)
+
+
+def crop_dark_pack(path: pathlib.Path, prefix: str) -> list[str]:
+    bgr_full = cv2.imread(str(path), cv2.IMREAD_COLOR)
+    h, w = bgr_full.shape[:2]
     names = []
-    for idx, (x0, y0, x1, y1) in enumerate(BOXES[prefix], 1):
-        x0, y0 = max(x0, 0), max(y0, 0)
-        x1, y1 = min(x1, w), min(y1, h)
-        sub = bgr[y0:y1, x0:x1].astype(np.float32)
-        bh, bw = sub.shape[:2]
+    for idx, (bx0, by0, bx1, by1) in enumerate(BOXES[prefix], 1):
+        # Pad the hand-tuned box so GrabCut has real background context on
+        # every side to learn from.
+        bw, bh = bx1 - bx0, by1 - by0
+        pad_x, pad_y = int(bw * 0.22), int(bh * 0.22)
+        x0, y0 = max(bx0 - pad_x, 0), max(by0 - pad_y, 0)
+        x1, y1 = min(bx1 + pad_x, w), min(by1 + pad_y, h)
+        sub = bgr_full[y0:y1, x0:x1]
 
-        oval = _oval_alpha(bh, bw, inner=0.48, outer=0.98).astype(np.float32)
-        oval /= 255.0
-        # Knock the dark vignette out properly: pure black -> transparent,
-        # mid tones ramp up fast. Dark clothing goes a little translucent
-        # (reads as a faded print) instead of leaving a grey ring.
-        v = cv2.cvtColor(sub.astype(np.uint8), cv2.COLOR_BGR2HSV)[:, :, 2] / 255.0
-        s = cv2.cvtColor(sub.astype(np.uint8), cv2.COLOR_BGR2HSV)[:, :, 1] / 255.0
-        fg = np.clip((v - 0.16) / 0.30, 0.0, 1.0)
-        fg = np.maximum(fg, np.clip((s - 0.20) / 0.30, 0.0, 1.0))
-        alpha = np.clip(oval * (0.15 + 0.85 * fg), 0, 1)
-        alpha = cv2.GaussianBlur(alpha, (0, 0), 2.5)
+        if (prefix, idx) in FORCE_OVAL:
+            alpha = _oval_fallback(sub)
+        else:
+            # The core (probably-foreground) region should match the
+            # original hand-tuned box, as a fraction of the padded crop.
+            core_frac = min((bx1 - bx0) / (x1 - x0), (by1 - by0) / (y1 - y0))
+            alpha = _grabcut_cutout(sub, core_frac=min(core_frac, 0.9))
+            if alpha is None:
+                alpha = _oval_fallback(sub)
+                print(f"  {prefix}-{idx:02d}: GrabCut leaked, used oval fallback")
 
-        rgba = np.dstack([sub, alpha * 255]).astype(np.uint8)
-        rgba = _trim_alpha(rgba)
+        rgba = np.dstack([sub, alpha])
+        rgba = _trim_alpha(rgba, pad=3)
         name = f"{prefix}-{idx:02d}.png"
         cv2.imwrite(str(OUT / name), rgba)
         names.append(name)

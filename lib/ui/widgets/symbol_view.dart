@@ -3,9 +3,8 @@ import "package:flutter/material.dart";
 import "../../deck/symbol_assets.dart";
 import "../../deck/symbol_catalog.dart";
 
-/// Renders one game symbol: the real Tollywood sticker art when a bundled
-/// asset exists for [symbolId], otherwise a clean cinema glyph (only symbol
-/// id 56 has no art).
+/// Renders one game symbol: the real Tollywood sticker art for [symbolId],
+/// falling back to a clean cinema glyph only if the asset fails to load.
 class SymbolView extends StatelessWidget {
   const SymbolView({required this.symbolId, this.size = 48, super.key});
 

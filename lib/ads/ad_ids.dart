@@ -2,17 +2,15 @@ import "dart:io";
 
 /// AdMob unit ids.
 ///
-/// TODO(owner): before store release, replace every value below with the
-/// real ids from the project's AdMob account, and swap the native app ids:
-///   - android/app/src/main/AndroidManifest.xml  (APPLICATION_ID meta-data)
-///   - ios/Runner/Info.plist                      (GADApplicationIdentifier)
-/// These are Google's public test ids and only ever serve test ads.
+/// TODO(owner): iOS still on Google's public test ids — replace once an iOS
+/// AdMob app + ad units exist, and swap the app id in ios/Runner/Info.plist
+/// (GADApplicationIdentifier).
 abstract final class AdIds {
   static String get banner => Platform.isIOS
       ? "ca-app-pub-3940256099942544/2934735716"
-      : "ca-app-pub-3940256099942544/6300978111";
+      : "ca-app-pub-1604142696504342/7827771088";
 
   static String get interstitial => Platform.isIOS
       ? "ca-app-pub-3940256099942544/4411468910"
-      : "ca-app-pub-3940256099942544/1033173712";
+      : "ca-app-pub-1604142696504342/6896253785";
 }

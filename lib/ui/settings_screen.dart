@@ -1,9 +1,13 @@
+import "package:cloud_firestore/cloud_firestore.dart";
 import "package:flutter/material.dart";
 import "package:flutter_riverpod/flutter_riverpod.dart";
 import "package:go_router/go_router.dart";
 
+import "../auth/account_deletion.dart";
+import "../auth/anon_auth.dart";
 import "../core/router.dart";
 import "../core/theme.dart";
+import "../storage/best_time_store.dart";
 import "../storage/settings_store.dart";
 
 class SettingsScreen extends ConsumerWidget {
@@ -44,6 +48,12 @@ class SettingsScreen extends ConsumerWidget {
             subtitle: Text("Added before store release"),
             trailing: Icon(Icons.open_in_new),
           ),
+          ListTile(
+            title: const Text("Delete my data"),
+            subtitle: const Text("Erases your stats and account permanently"),
+            trailing: const Icon(Icons.delete_outline),
+            onTap: () => _confirmDeleteAccount(context, ref),
+          ),
           const AboutListTile(
             icon: Icon(Icons.info_outline),
             applicationName: "TFI Bagundaali",
@@ -54,5 +64,49 @@ class SettingsScreen extends ConsumerWidget {
         ],
       ),
     );
+  }
+}
+
+Future<void> _confirmDeleteAccount(BuildContext context, WidgetRef ref) async {
+  final confirmed = await showDialog<bool>(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: const Text("Delete my data?"),
+      content: const Text(
+        "This permanently deletes your stats and account. "
+        "This cannot be undone.",
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context, false),
+          child: const Text("Cancel"),
+        ),
+        TextButton(
+          onPressed: () => Navigator.pop(context, true),
+          child: const Text("Delete"),
+        ),
+      ],
+    ),
+  );
+  if (confirmed != true) return;
+
+  try {
+    await deleteAccountAndData(
+      auth: ref.read(firebaseAuthProvider),
+      firestore: FirebaseFirestore.instance,
+      bestTimeStore: BestTimeStore(),
+    );
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Your data has been deleted.")),
+      );
+      context.go(Routes.home);
+    }
+  } catch (e) {
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Couldn't delete data: $e")),
+      );
+    }
   }
 }

@@ -3,7 +3,7 @@ import "dart:math";
 import "../core/rng.dart";
 import "models.dart";
 
-const double kSymbolRadius = 0.23;
+const double kSymbolRadius = 0.24;
 
 /// Deterministic scatter layout for a card, keyed on [GameCard.id].
 ///

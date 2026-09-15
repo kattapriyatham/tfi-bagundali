@@ -34,7 +34,7 @@ if ! rclone listremotes 2>/dev/null | grep -q "^gdrive:$"; then
 fi
 
 if [[ "$do_build" == "1" ]]; then
-  ./scripts/build_release.sh --fast "${build_args[@]}"
+  ./scripts/build_release.sh --fast "${build_args[@]+"${build_args[@]}"}"
 fi
 
 [[ -f "$APK" ]] || { echo "error: $APK not found — build it first" >&2; exit 1; }

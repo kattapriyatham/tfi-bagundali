@@ -2,6 +2,7 @@ import "dart:math" as math;
 
 import "package:flutter/material.dart";
 
+import "../../core/theme.dart";
 import "../../deck/card_layout.dart";
 import "../../deck/models.dart";
 import "symbol_view.dart";
@@ -16,6 +17,8 @@ class CardView extends StatelessWidget {
     this.interactive = true,
     this.accent,
     this.label,
+    this.backgroundColor = const Color(0xFFFAF7ED),
+    this.glow = false,
     super.key,
   });
 
@@ -34,6 +37,14 @@ class CardView extends StatelessWidget {
   /// Requires [accent] (used as the pill's background).
   final String? label;
 
+  /// Card face colour. Lets otherwise-identical cards (e.g. centre pile vs
+  /// the player's own card) read as visually distinct at a glance.
+  final Color backgroundColor;
+
+  /// Adds a soft coloured halo around the card to draw the eye to it (used
+  /// for the player's own card).
+  final bool glow;
+
   @override
   Widget build(BuildContext context) {
     final placements = layoutForCard(card);
@@ -41,15 +52,27 @@ class CardView extends StatelessWidget {
 
     final circle = DecoratedBox(
       decoration: BoxDecoration(
-        color: const Color(0xFFFAF7ED),
+        color: backgroundColor,
         shape: BoxShape.circle,
         border: accent == null ? null : Border.all(color: accent!, width: 4),
-        boxShadow: const [
-          BoxShadow(
+        boxShadow: [
+          const BoxShadow(
             color: Color(0x33000000),
             blurRadius: 12,
             offset: Offset(0, 4),
           ),
+          if (glow) ...[
+            BoxShadow(
+              color: AppColors.mustard.withAlpha(140),
+              blurRadius: 32,
+              spreadRadius: 4,
+            ),
+            BoxShadow(
+              color: AppColors.mustard.withAlpha(90),
+              blurRadius: 60,
+              spreadRadius: 10,
+            ),
+          ],
         ],
       ),
       child: SizedBox(
