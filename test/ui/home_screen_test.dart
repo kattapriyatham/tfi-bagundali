@@ -2,8 +2,8 @@ import "package:flutter/material.dart";
 import "package:flutter_riverpod/flutter_riverpod.dart";
 import "package:flutter_test/flutter_test.dart";
 import "package:go_router/go_router.dart";
-import "package:tfi_bagundaali/core/online_availability.dart";
-import "package:tfi_bagundaali/ui/home_screen.dart";
+import "package:tfi_bagundali/core/online_availability.dart";
+import "package:tfi_bagundali/ui/home_screen.dart";
 
 void main() {
   GoRouter buildRouter() => GoRouter(

@@ -1,11 +1,11 @@
 import "package:flutter_riverpod/flutter_riverpod.dart";
 import "package:flutter_test/flutter_test.dart";
-import "package:tfi_bagundaali/deck/deck_loader.dart";
-import "package:tfi_bagundaali/deck/dobble.dart";
-import "package:tfi_bagundaali/deck/match_rules.dart";
-import "package:tfi_bagundaali/game/engine/two_player_state.dart";
-import "package:tfi_bagundaali/game/local/two_player_controller.dart";
-import "package:tfi_bagundaali/game/solo/solo_controller.dart" show deckProvider;
+import "package:tfi_bagundali/deck/deck_loader.dart";
+import "package:tfi_bagundali/deck/dobble.dart";
+import "package:tfi_bagundali/deck/match_rules.dart";
+import "package:tfi_bagundali/game/engine/two_player_state.dart";
+import "package:tfi_bagundali/game/local/two_player_controller.dart";
+import "package:tfi_bagundali/game/solo/solo_controller.dart" show deckProvider;
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();

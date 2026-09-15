@@ -1,5 +1,5 @@
 import "package:flutter_test/flutter_test.dart";
-import "package:tfi_bagundaali/deck/models.dart";
+import "package:tfi_bagundali/deck/models.dart";
 
 void main() {
   test("GameCard JSON round-trips", () {

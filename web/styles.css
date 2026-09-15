@@ -73,10 +73,9 @@ a {
 }
 
 .hero img.icon {
-  width: clamp(48px, 7vw, 96px);
-  height: clamp(48px, 7vw, 96px);
-  border-radius: 22%;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  width: clamp(56px, 8vw, 108px);
+  height: clamp(56px, 8vw, 108px);
+  filter: drop-shadow(0 8px 20px rgba(0, 0, 0, 0.5));
 }
 
 .logotype {

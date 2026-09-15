@@ -1,7 +1,7 @@
 import "package:flutter_test/flutter_test.dart";
-import "package:tfi_bagundaali/deck/deck_loader.dart";
-import "package:tfi_bagundaali/deck/dobble.dart";
-import "package:tfi_bagundaali/deck/match_rules.dart";
+import "package:tfi_bagundali/deck/deck_loader.dart";
+import "package:tfi_bagundali/deck/dobble.dart";
+import "package:tfi_bagundali/deck/match_rules.dart";
 
 void main() {
   final deck = deckFromRows(generateDobbleDeck(7));

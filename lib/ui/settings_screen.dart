@@ -2,9 +2,11 @@ import "package:cloud_firestore/cloud_firestore.dart";
 import "package:flutter/material.dart";
 import "package:flutter_riverpod/flutter_riverpod.dart";
 import "package:go_router/go_router.dart";
+import "package:url_launcher/url_launcher.dart";
 
 import "../auth/account_deletion.dart";
 import "../auth/anon_auth.dart";
+import "../core/links.dart";
 import "../core/router.dart";
 import "../core/theme.dart";
 import "../storage/best_time_store.dart";
@@ -43,10 +45,10 @@ class SettingsScreen extends ConsumerWidget {
             onChanged: (v) => ctrl.setSound(enabled: v),
           ),
           const Divider(),
-          const ListTile(
-            title: Text("Privacy policy"),
-            subtitle: Text("Added before store release"),
-            trailing: Icon(Icons.open_in_new),
+          ListTile(
+            title: const Text("Privacy policy"),
+            trailing: const Icon(Icons.open_in_new),
+            onTap: () => _openPrivacyPolicy(context),
           ),
           ListTile(
             title: const Text("Delete my data"),
@@ -56,7 +58,7 @@ class SettingsScreen extends ConsumerWidget {
           ),
           const AboutListTile(
             icon: Icon(Icons.info_outline),
-            applicationName: "TFI Bagundaali",
+            applicationName: "TFI Bagundali",
             applicationVersion: "0.1.0",
             applicationLegalese: "A Telugu cinema party game.",
             child: Text("Credits"),
@@ -108,5 +110,15 @@ Future<void> _confirmDeleteAccount(BuildContext context, WidgetRef ref) async {
         SnackBar(content: Text("Couldn't delete data: $e")),
       );
     }
+  }
+}
+
+Future<void> _openPrivacyPolicy(BuildContext context) async {
+  final uri = Uri.parse(AppLinks.privacyPolicy);
+  final opened = await launchUrl(uri, mode: LaunchMode.externalApplication);
+  if (!opened && context.mounted) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Couldn't open the privacy policy.")),
+    );
   }
 }

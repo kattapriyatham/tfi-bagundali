@@ -1,5 +1,5 @@
 import "package:flutter_test/flutter_test.dart";
-import "package:tfi_bagundaali/deck/symbol_catalog.dart";
+import "package:tfi_bagundali/deck/symbol_catalog.dart";
 
 void main() {
   test("kSymbolCount is 57", () {

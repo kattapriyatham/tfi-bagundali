@@ -1,7 +1,7 @@
 import "dart:math";
 
 import "package:flutter_test/flutter_test.dart";
-import "package:tfi_bagundaali/rooms/room_code.dart";
+import "package:tfi_bagundali/rooms/room_code.dart";
 
 void main() {
   test("generates a 5-character code from the fixed alphabet", () {

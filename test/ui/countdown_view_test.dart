@@ -1,6 +1,6 @@
 import "package:flutter/material.dart";
 import "package:flutter_test/flutter_test.dart";
-import "package:tfi_bagundaali/ui/widgets/countdown_view.dart";
+import "package:tfi_bagundali/ui/widgets/countdown_view.dart";
 
 void main() {
   testWidgets("counts 3-2-1-GO then fires onDone", (tester) async {

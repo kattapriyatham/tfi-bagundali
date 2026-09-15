@@ -1,9 +1,9 @@
 import "dart:math";
 
 import "package:flutter_test/flutter_test.dart";
-import "package:tfi_bagundaali/deck/card_layout.dart";
-import "package:tfi_bagundaali/deck/deck_loader.dart";
-import "package:tfi_bagundaali/deck/dobble.dart";
+import "package:tfi_bagundali/deck/card_layout.dart";
+import "package:tfi_bagundali/deck/deck_loader.dart";
+import "package:tfi_bagundali/deck/dobble.dart";
 
 void main() {
   final deck = deckFromRows(generateDobbleDeck(7));

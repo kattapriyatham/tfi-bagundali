@@ -1,5 +1,5 @@
-name: tfi_bagundaali
-description: "TFI Bagundaali - a Telugu cinema party card game."
+name: tfi_bagundali
+description: "TFI Bagundali - a Telugu cinema party card game."
 publish_to: "none"
 version: 0.1.0+1
 
@@ -19,6 +19,7 @@ dependencies:
   firebase_auth: ^6.6.1
   firebase_database: ^12.5.0
   cloud_firestore: ^6.9.0
+  url_launcher: ^6.3.1
 
 dev_dependencies:
   flutter_test:
@@ -35,7 +36,7 @@ flutter_launcher_icons:
   android: true
   ios: true
   image_path: "assets/icon/app_icon.png"
-  adaptive_icon_background: "#C63B2B"
+  adaptive_icon_background: "#1A1A1A"
   adaptive_icon_foreground: "assets/icon/app_icon_fg.png"
   remove_alpha_ios: true
 

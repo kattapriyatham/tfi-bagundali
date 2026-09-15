@@ -1,7 +1,7 @@
 import "package:flutter/foundation.dart";
 import "package:flutter_riverpod/flutter_riverpod.dart";
 import "package:flutter_test/flutter_test.dart";
-import "package:tfi_bagundaali/core/online_availability.dart";
+import "package:tfi_bagundali/core/online_availability.dart";
 
 void main() {
   test("isOnlinePlatformSupported is true only on Android", () {

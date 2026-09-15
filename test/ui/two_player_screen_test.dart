@@ -2,11 +2,11 @@ import "package:flutter/material.dart";
 import "package:flutter_riverpod/flutter_riverpod.dart";
 import "package:flutter_test/flutter_test.dart";
 import "package:go_router/go_router.dart";
-import "package:tfi_bagundaali/deck/deck_loader.dart";
-import "package:tfi_bagundaali/deck/dobble.dart";
-import "package:tfi_bagundaali/game/solo/solo_controller.dart" show deckProvider;
-import "package:tfi_bagundaali/ui/two_player_screen.dart";
-import "package:tfi_bagundaali/ui/widgets/card_view.dart";
+import "package:tfi_bagundali/deck/deck_loader.dart";
+import "package:tfi_bagundali/deck/dobble.dart";
+import "package:tfi_bagundali/game/solo/solo_controller.dart" show deckProvider;
+import "package:tfi_bagundali/ui/two_player_screen.dart";
+import "package:tfi_bagundali/ui/widgets/card_view.dart";
 
 void main() {
   final deck = deckFromRows(generateDobbleDeck(7));

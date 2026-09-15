@@ -1,4 +1,4 @@
-package io.tfibagundaali.app
+package io.tfibagundali.app
 
 import io.flutter.embedding.android.FlutterActivity
 

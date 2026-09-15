@@ -1,6 +1,6 @@
 import "package:flutter_test/flutter_test.dart";
 import "package:shared_preferences/shared_preferences.dart";
-import "package:tfi_bagundaali/storage/best_time_store.dart";
+import "package:tfi_bagundali/storage/best_time_store.dart";
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();

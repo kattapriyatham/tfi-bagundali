@@ -1,8 +1,8 @@
 import "dart:io";
 
 import "package:flutter_test/flutter_test.dart";
-import "package:tfi_bagundaali/deck/symbol_assets.dart";
-import "package:tfi_bagundaali/deck/symbol_catalog.dart";
+import "package:tfi_bagundali/deck/symbol_assets.dart";
+import "package:tfi_bagundali/deck/symbol_catalog.dart";
 
 void main() {
   test("there is one asset slot per symbol", () {

@@ -5,7 +5,7 @@
 
 ## Purpose
 
-TFI Bagundaali needs a public web presence before Play Store submission, primarily to host a URL for the privacy policy (required by Play Console's data-safety and account-deletion policy forms). A small marketing landing page rides along on the same deploy.
+TFI Bagundali needs a public web presence before Play Store submission, primarily to host a URL for the privacy policy (required by Play Console's data-safety and account-deletion policy forms). A small marketing landing page rides along on the same deploy.
 
 ## Scope
 

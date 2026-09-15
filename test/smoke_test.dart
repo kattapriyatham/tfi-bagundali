@@ -1,6 +1,6 @@
 import "package:flutter_riverpod/flutter_riverpod.dart";
 import "package:flutter_test/flutter_test.dart";
-import "package:tfi_bagundaali/app.dart";
+import "package:tfi_bagundali/app.dart";
 
 void main() {
   testWidgets("app boots", (tester) async {

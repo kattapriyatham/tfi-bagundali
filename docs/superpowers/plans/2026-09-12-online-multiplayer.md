@@ -13,7 +13,7 @@
 ## Global Constraints
 
 - Dart string literals use **double quotes**; imports inside `lib/` are **relative** (`../../deck/deck.dart`, not `package:`), matching every existing file. Follow `analysis_options.yaml` (`very_good_analysis`, `public_member_api_docs` off, `prefer_double_quotes` on).
-- Firebase project: `spndex-37b0d`. Android app already registered (package `io.tfibagundaali.app`, `android/app/google-services.json` present and gitignored). **No iOS Firebase app yet** — iOS support is out of scope for this plan; gate all Firebase usage behind an `onlineAvailableProvider` that is `false` on any platform other than Android, and leave the home screen's "Play Online" card showing "Coming Soon" wherever that provider is false.
+- Firebase project: `spndex-37b0d`. Android app already registered (package `io.tfibagundali.app`, `android/app/google-services.json` present and gitignored). **No iOS Firebase app yet** — iOS support is out of scope for this plan; gate all Firebase usage behind an `onlineAvailableProvider` that is `false` on any platform other than Android, and leave the home screen's "Play Online" card showing "Coming Soon" wherever that provider is false.
 - **No Cloud Functions in v1.** Room creation and end-of-game stat writes are client-side, guarded by RTDB/Firestore security rules (see spec amendment). Do not add a `functions/` directory or the `cloud_functions` package.
 - Room code: 5 characters from `ABCDEFGHJKLMNPQRSTUVWXYZ` (26 letters minus `I`/`O`, which are visually confusable with `1`/`0`).
 - Round-advance race resolution is **one RTDB transaction directly on `/rooms/{code}/deck/centerIndex`** — no `round` node in the data model (see spec §8.2 amendment).
@@ -108,7 +108,7 @@ final onlineAvailableProvider = Provider<bool>((ref) => Firebase.apps.isNotEmpty
 import "package:flutter/foundation.dart";
 import "package:flutter_test/flutter_test.dart";
 import "package:flutter_riverpod/flutter_riverpod.dart";
-import "package:tfi_bagundaali/core/online_availability.dart";
+import "package:tfi_bagundali/core/online_availability.dart";
 
 void main() {
   test("isOnlinePlatformSupported is true only on Android", () {
@@ -375,7 +375,7 @@ final authStateProvider = StreamProvider<User?>((ref) {
 import "package:firebase_auth/firebase_auth.dart";
 import "package:firebase_core/firebase_core.dart";
 import "package:flutter_test/flutter_test.dart";
-import "package:tfi_bagundaali/auth/anon_auth.dart";
+import "package:tfi_bagundali/auth/anon_auth.dart";
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -438,7 +438,7 @@ git commit -m "feat: bootstrap anonymous Firebase auth for online multiplayer"
 import "dart:math";
 
 import "package:flutter_test/flutter_test.dart";
-import "package:tfi_bagundaali/rooms/room_code.dart";
+import "package:tfi_bagundali/rooms/room_code.dart";
 
 void main() {
   test("generates a 5-character code from the fixed alphabet", () {
@@ -515,7 +515,7 @@ git commit -m "feat: add room code generator"
 ```dart
 // test/rooms/room_models_test.dart
 import "package:flutter_test/flutter_test.dart";
-import "package:tfi_bagundaali/rooms/room_models.dart";
+import "package:tfi_bagundali/rooms/room_models.dart";
 
 void main() {
   test("RoomSnapshot.empty has no host and an empty player map", () {
@@ -991,8 +991,8 @@ import "package:firebase_auth/firebase_auth.dart";
 import "package:firebase_core/firebase_core.dart";
 import "package:firebase_database/firebase_database.dart";
 import "package:flutter_test/flutter_test.dart";
-import "package:tfi_bagundaali/rooms/room_models.dart";
-import "package:tfi_bagundaali/rooms/room_repository.dart";
+import "package:tfi_bagundali/rooms/room_models.dart";
+import "package:tfi_bagundali/rooms/room_repository.dart";
 
 /// Signs in a fresh anonymous user against the emulator and returns a
 /// [RoomRepository] bound to that user's uid — used to simulate one
@@ -1185,7 +1185,7 @@ import "package:cloud_firestore/cloud_firestore.dart";
 import "package:firebase_auth/firebase_auth.dart";
 import "package:firebase_core/firebase_core.dart";
 import "package:flutter_test/flutter_test.dart";
-import "package:tfi_bagundaali/profile/stats_repository.dart";
+import "package:tfi_bagundali/profile/stats_repository.dart";
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -1286,12 +1286,12 @@ import "package:firebase_core/firebase_core.dart";
 import "package:firebase_database/firebase_database.dart";
 import "package:flutter_riverpod/flutter_riverpod.dart";
 import "package:flutter_test/flutter_test.dart";
-import "package:tfi_bagundaali/deck/deck_loader.dart";
-import "package:tfi_bagundaali/deck/dobble.dart";
-import "package:tfi_bagundaali/deck/match_rules.dart";
-import "package:tfi_bagundaali/game/online/online_inferno_controller.dart";
-import "package:tfi_bagundaali/game/solo/solo_controller.dart" show deckProvider;
-import "package:tfi_bagundaali/rooms/room_repository.dart";
+import "package:tfi_bagundali/deck/deck_loader.dart";
+import "package:tfi_bagundali/deck/dobble.dart";
+import "package:tfi_bagundali/deck/match_rules.dart";
+import "package:tfi_bagundali/game/online/online_inferno_controller.dart";
+import "package:tfi_bagundali/game/solo/solo_controller.dart" show deckProvider;
+import "package:tfi_bagundali/rooms/room_repository.dart";
 
 Future<({RoomRepository repo, String uid})> _client(String appName) async {
   final app = await Firebase.initializeApp(
@@ -1758,10 +1758,10 @@ class OnlineLobbyScreen extends ConsumerWidget {
 import "package:flutter/material.dart";
 import "package:flutter_riverpod/flutter_riverpod.dart";
 import "package:flutter_test/flutter_test.dart";
-import "package:tfi_bagundaali/game/online/online_inferno_controller.dart" show roomRepositoryProvider;
-import "package:tfi_bagundaali/rooms/room_models.dart";
-import "package:tfi_bagundaali/rooms/room_repository.dart";
-import "package:tfi_bagundaali/ui/online/create_join_screen.dart";
+import "package:tfi_bagundali/game/online/online_inferno_controller.dart" show roomRepositoryProvider;
+import "package:tfi_bagundali/rooms/room_models.dart";
+import "package:tfi_bagundali/rooms/room_repository.dart";
+import "package:tfi_bagundali/ui/online/create_join_screen.dart";
 
 class _FakeRoomRepository implements RoomRepository {
   final _rooms = <String, RoomSnapshot>{};
@@ -2085,13 +2085,13 @@ Add the import `import "../../auth/anon_auth.dart";` for `firebaseAuthProvider`.
 import "package:flutter/material.dart";
 import "package:flutter_riverpod/flutter_riverpod.dart";
 import "package:flutter_test/flutter_test.dart";
-import "package:tfi_bagundaali/deck/deck_loader.dart";
-import "package:tfi_bagundaali/deck/dobble.dart";
-import "package:tfi_bagundaali/game/online/online_inferno_controller.dart";
-import "package:tfi_bagundaali/game/solo/solo_controller.dart" show deckProvider;
-import "package:tfi_bagundaali/rooms/room_models.dart";
-import "package:tfi_bagundaali/rooms/room_repository.dart";
-import "package:tfi_bagundaali/ui/online/online_game_screen.dart";
+import "package:tfi_bagundali/deck/deck_loader.dart";
+import "package:tfi_bagundali/deck/dobble.dart";
+import "package:tfi_bagundali/game/online/online_inferno_controller.dart";
+import "package:tfi_bagundali/game/solo/solo_controller.dart" show deckProvider;
+import "package:tfi_bagundali/rooms/room_models.dart";
+import "package:tfi_bagundali/rooms/room_repository.dart";
+import "package:tfi_bagundali/ui/online/online_game_screen.dart";
 
 class _FixedRoomRepository implements RoomRepository {
   _FixedRoomRepository(this.snapshot);
@@ -2177,7 +2177,7 @@ class _FakeUser implements User {
 }
 ```
 
-Add `import "package:firebase_auth/firebase_auth.dart";` and `import "package:tfi_bagundaali/auth/anon_auth.dart";` to the test file, and the override to the `ProviderScope`.
+Add `import "package:firebase_auth/firebase_auth.dart";` and `import "package:tfi_bagundali/auth/anon_auth.dart";` to the test file, and the override to the `ProviderScope`.
 
 - [ ] **Step 5: Run the test**
 
@@ -2252,7 +2252,7 @@ Expected: PASS unchanged (both existing tests).
   });
 ```
 
-Add the import `import "package:tfi_bagundaali/core/online_availability.dart";` to the test file if not already present.
+Add the import `import "package:tfi_bagundali/core/online_availability.dart";` to the test file if not already present.
 
 - [ ] **Step 4: Run it**
 
@@ -2284,8 +2284,8 @@ git commit -m "feat: enable Play Online home card on supported platforms"
 ```dart
 // test/game/online/host_migration_test.dart
 import "package:flutter_test/flutter_test.dart";
-import "package:tfi_bagundaali/game/online/host_migration.dart";
-import "package:tfi_bagundaali/rooms/room_models.dart";
+import "package:tfi_bagundali/game/online/host_migration.dart";
+import "package:tfi_bagundali/rooms/room_models.dart";
 
 RoomSnapshot _snapshot(Map<String, RoomPlayer> players, {String hostUid = "u1"}) => RoomSnapshot(
       code: "X",

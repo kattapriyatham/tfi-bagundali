@@ -2,7 +2,7 @@ import "dart:convert";
 import "dart:io";
 
 import "package:flutter_test/flutter_test.dart";
-import "package:tfi_bagundaali/deck/dobble.dart";
+import "package:tfi_bagundali/deck/dobble.dart";
 
 void main() {
   test("assets/deck.json matches the generator output", () {

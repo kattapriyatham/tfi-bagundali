@@ -1,8 +1,8 @@
-# Privacy Policy for TFI Bagundaali
+# Privacy Policy for TFI Bagundali
 
 **Last updated:** 2026-09-12
 
-TFI Bagundaali ("the app") is a Telugu cinema party card game. This policy explains what data the app collects, how it is used, and how you can delete it.
+TFI Bagundali ("the app") is a Telugu cinema party card game. This policy explains what data the app collects, how it is used, and how you can delete it.
 
 ## Data we collect
 

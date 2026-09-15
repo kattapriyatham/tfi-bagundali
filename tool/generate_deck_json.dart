@@ -1,7 +1,7 @@
 import "dart:convert";
 import "dart:io";
 
-import "package:tfi_bagundaali/deck/dobble.dart";
+import "package:tfi_bagundali/deck/dobble.dart";
 
 /// Regenerates assets/deck.json. Run: `dart run tool/generate_deck_json.dart`
 void main() {

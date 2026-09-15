@@ -4,13 +4,13 @@ import "package:firebase_database/firebase_database.dart";
 import "package:flutter_riverpod/flutter_riverpod.dart";
 import "package:flutter_test/flutter_test.dart";
 import "package:integration_test/integration_test.dart";
-import "package:tfi_bagundaali/deck/deck_loader.dart";
-import "package:tfi_bagundaali/deck/dobble.dart";
-import "package:tfi_bagundaali/deck/match_rules.dart";
-import "package:tfi_bagundaali/game/online/online_inferno_controller.dart";
-import "package:tfi_bagundaali/game/solo/solo_controller.dart"
+import "package:tfi_bagundali/deck/deck_loader.dart";
+import "package:tfi_bagundali/deck/dobble.dart";
+import "package:tfi_bagundali/deck/match_rules.dart";
+import "package:tfi_bagundali/game/online/online_inferno_controller.dart";
+import "package:tfi_bagundali/game/solo/solo_controller.dart"
     show deckProvider;
-import "package:tfi_bagundaali/rooms/room_repository.dart";
+import "package:tfi_bagundali/rooms/room_repository.dart";
 
 Future<({RoomRepository repo, String uid})> client(String appName) async {
   final app = await Firebase.initializeApp(

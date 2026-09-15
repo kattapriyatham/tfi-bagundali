@@ -1,4 +1,4 @@
-# TFI Bagundaali
+# TFI Bagundali
 
 A Tollywood-themed Spot It / Dobble card game (Flutter, iOS + Android).
 
@@ -40,7 +40,7 @@ for sideloading and internal testing; wire a real `signingConfig` (keystore +
 
     ./scripts/deploy_gdrive.sh
 
-Builds a release APK (`--fast`, arm64) and uploads it to `apps/tfi-bagundaali/`
+Builds a release APK (`--fast`, arm64) and uploads it to `apps/tfi-bagundali/`
 in Google Drive via `rclone` (remote name `gdrive`) — a release APK is 30MB+
 (40MB+ base64), too large for the chat's Drive tool to take inline. This is
 the "deploy to gdrive" workflow — repeat this script, don't try to inline the

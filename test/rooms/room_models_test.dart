@@ -1,5 +1,5 @@
 import "package:flutter_test/flutter_test.dart";
-import "package:tfi_bagundaali/rooms/room_models.dart";
+import "package:tfi_bagundali/rooms/room_models.dart";
 
 void main() {
   test("RoomSnapshot.empty has no host and an empty player map", () {

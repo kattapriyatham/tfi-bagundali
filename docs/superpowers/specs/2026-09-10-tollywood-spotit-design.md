@@ -1,6 +1,6 @@
-# TFI Bagundaali — Design Spec
+# TFI Bagundali — Design Spec
 
-- **App title:** TFI Bagundaali (Telugu Film Industry — "bagundaali" / "may it
+- **App title:** TFI Bagundali (Telugu Film Industry — "bagundali" / "may it
   do well", a common fan sentiment). Earlier drafts: "Tollywood Spot It",
   "Match Cut", "TFI Banisa".
 - **Date:** 2026-09-10
@@ -14,7 +14,7 @@
   this doesn't lower the security bar in a way that matters for a
   play-with-friends party game. Every place below that said "Cloud Function"
   is updated to the client+rules equivalent. App id also changed post-draft:
-  `io.tfibagundaali.app` (was `ai.randomwalk.*`).
+  `io.tfibagundali.app` (was `ai.randomwalk.*`).
 
 ## 1. Overview
 

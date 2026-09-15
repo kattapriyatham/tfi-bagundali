@@ -1,5 +1,5 @@
 import "package:flutter_test/flutter_test.dart";
-import "package:tfi_bagundaali/deck/dobble.dart";
+import "package:tfi_bagundali/deck/dobble.dart";
 
 void main() {
   final deck = generateDobbleDeck(7);

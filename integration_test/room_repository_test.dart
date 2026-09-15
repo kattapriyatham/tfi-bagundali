@@ -3,8 +3,8 @@ import "package:firebase_core/firebase_core.dart";
 import "package:firebase_database/firebase_database.dart";
 import "package:flutter_test/flutter_test.dart";
 import "package:integration_test/integration_test.dart";
-import "package:tfi_bagundaali/rooms/room_models.dart";
-import "package:tfi_bagundaali/rooms/room_repository.dart";
+import "package:tfi_bagundali/rooms/room_models.dart";
+import "package:tfi_bagundali/rooms/room_repository.dart";
 
 /// Signs in a fresh anonymous user against the emulator and returns a
 /// [RoomRepository] bound to that user's uid — used to simulate one

@@ -9,7 +9,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp.router(
-      title: "TFI Bagundaali",
+      title: "TFI Bagundali",
       theme: appTheme(),
       routerConfig: router,
     );

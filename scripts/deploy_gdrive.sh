@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Build a release APK and upload it to Google Drive at apps/tfi-bagundaali/.
+# Build a release APK and upload it to Google Drive at apps/tfi-bagundali/.
 #
 # Usage:
 #   ./scripts/deploy_gdrive.sh              # build (--fast) + upload
@@ -16,7 +16,7 @@
 set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
 
-REMOTE="gdrive:apps/tfi-bagundaali/"
+REMOTE="gdrive:apps/tfi-bagundali/"
 APK="build/app/outputs/flutter-apk/app-release.apk"
 
 do_build=1
