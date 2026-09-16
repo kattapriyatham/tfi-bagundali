@@ -4,6 +4,7 @@ import "package:go_router/go_router.dart";
 
 import "../../auth/anon_auth.dart";
 import "../../core/router.dart";
+import "../../core/theme.dart";
 import "../../game/online/online_inferno_controller.dart"
     show roomRepositoryProvider;
 import "../../storage/active_room_store.dart";
@@ -75,7 +76,15 @@ class _CreateJoinScreenState extends ConsumerState<CreateJoinScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Play Online")),
+      appBar: AppBar(
+        title: const Text("Play Online"),
+        backgroundColor: AppColors.charcoal,
+        foregroundColor: Colors.white,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => context.go(Routes.home),
+        ),
+      ),
       body: Padding(
         padding: const EdgeInsets.all(24),
         child: Column(

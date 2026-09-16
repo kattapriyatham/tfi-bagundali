@@ -4,6 +4,7 @@ import "package:go_router/go_router.dart";
 
 import "../../auth/anon_auth.dart";
 import "../../core/router.dart";
+import "../../core/theme.dart";
 import "../../game/engine/round_state.dart" show shuffledDeckOrder;
 import "../../game/online/online_inferno_controller.dart"
     show roomRepositoryProvider;
@@ -54,6 +55,8 @@ class _OnlineLobbyScreenState extends ConsumerState<OnlineLobbyScreen>
     return Scaffold(
       appBar: AppBar(
         title: Text("Room $code"),
+        backgroundColor: AppColors.charcoal,
+        foregroundColor: Colors.white,
         leading: IconButton(
           icon: const Icon(Icons.close),
           onPressed: () async {

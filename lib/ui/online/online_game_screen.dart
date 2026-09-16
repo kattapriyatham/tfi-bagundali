@@ -4,6 +4,7 @@ import "package:go_router/go_router.dart";
 
 import "../../auth/anon_auth.dart";
 import "../../core/router.dart";
+import "../../core/theme.dart";
 import "../../game/online/online_inferno_controller.dart";
 import "../../game/solo/solo_controller.dart" show deckProvider;
 import "../../rooms/room_models.dart" show RoomPlayer;
@@ -52,6 +53,28 @@ class _OnlineGameScreenState extends ConsumerState<OnlineGameScreen>
     final room = ref.watch(onlineInfernoControllerProvider);
 
     return Scaffold(
+      appBar: AppBar(
+        title: Text("Room ${widget.code}"),
+        backgroundColor: AppColors.charcoal,
+        foregroundColor: Colors.white,
+        leading: IconButton(
+          icon: const Icon(Icons.close),
+          onPressed: () async {
+            final quit = await confirmQuit(
+              context,
+              title: "Quit game?",
+              message: "You'll leave this online game.",
+            );
+            if (quit) {
+              await ref
+                  .read(roomRepositoryProvider)
+                  .setConnected(widget.code, connected: false);
+              await ref.read(activeRoomProvider.notifier).clear();
+              if (context.mounted) context.go(Routes.home);
+            }
+          },
+        ),
+      ),
       body: SafeArea(
         child: deck.when(
           loading: () => const Center(child: CircularProgressIndicator()),
@@ -131,23 +154,6 @@ class _OnlineGameScreenState extends ConsumerState<OnlineGameScreen>
                           ),
                       ],
                     ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.close),
-                    onPressed: () async {
-                      final quit = await confirmQuit(
-                        context,
-                        title: "Quit game?",
-                        message: "You'll leave this online game.",
-                      );
-                      if (quit) {
-                        await ref
-                            .read(roomRepositoryProvider)
-                            .setConnected(widget.code, connected: false);
-                        await ref.read(activeRoomProvider.notifier).clear();
-                        if (context.mounted) context.go(Routes.home);
-                      }
-                    },
                   ),
                 ],
               );
