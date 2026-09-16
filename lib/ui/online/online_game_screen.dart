@@ -10,10 +10,11 @@ import "../../core/router.dart";
 import "../../core/theme.dart";
 import "../../game/online/online_inferno_controller.dart";
 import "../../game/solo/solo_controller.dart" show deckProvider;
-import "../../rooms/room_models.dart" show RoomPlayer;
+import "../../rooms/room_models.dart" show RoomPlayer, RoomSnapshot;
 import "../../storage/active_room_store.dart";
 import "../widgets/card_view.dart";
 import "../widgets/confetti_overlay.dart";
+import "../widgets/match_flash.dart";
 import "../widgets/quit_confirm.dart";
 
 class OnlineGameScreen extends ConsumerStatefulWidget {
@@ -26,7 +27,9 @@ class OnlineGameScreen extends ConsumerStatefulWidget {
 }
 
 class _OnlineGameScreenState extends ConsumerState<OnlineGameScreen>
-    with WidgetsBindingObserver {
+    with WidgetsBindingObserver, SingleTickerProviderStateMixin {
+  late final MatchFlash _flash = MatchFlash(vsync: this);
+
   @override
   void initState() {
     super.initState();
@@ -41,6 +44,7 @@ class _OnlineGameScreenState extends ConsumerState<OnlineGameScreen>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    _flash.dispose();
     super.dispose();
   }
 
@@ -55,6 +59,26 @@ class _OnlineGameScreenState extends ConsumerState<OnlineGameScreen>
   Widget build(BuildContext context) {
     final deck = ref.watch(deckProvider);
     final room = ref.watch(onlineInfernoControllerProvider);
+
+    ref.listen<AsyncValue<RoomSnapshot>>(onlineInfernoControllerProvider,
+        (prev, next) {
+      final prevSnap = prev?.value;
+      final nextSnap = next.value;
+      if (prevSnap == null || nextSnap == null) return;
+      for (final entry in nextSnap.players.entries) {
+        final prevCount = prevSnap.players[entry.key]?.count ?? 0;
+        if (entry.value.count > prevCount) {
+          final myUid = ref.read(firebaseAuthProvider).currentUser?.uid;
+          final isSelf = entry.key == myUid;
+          _flash.show(
+            text:
+                isSelf ? "You matched it!" : "${entry.value.name} matched it!",
+            isSelf: isSelf,
+          );
+          break;
+        }
+      }
+    });
 
     return Scaffold(
       appBar: AppBar(
@@ -113,52 +137,70 @@ class _OnlineGameScreenState extends ConsumerState<OnlineGameScreen>
                 );
               }
 
-              return Column(
+              return Stack(
                 children: [
-                  Expanded(
-                    child: Center(
-                      child: CardView(
-                        card: loadedDeck.card(snap.centerCardId),
-                        accent: Colors.amber,
-                        interactive: false,
-                        onSymbolTap: (_) {},
+                  Column(
+                    children: [
+                      Expanded(
+                        child: Center(
+                          child: CardView(
+                            card: loadedDeck.card(snap.centerCardId),
+                            accent: Colors.amber,
+                            interactive: false,
+                            onSymbolTap: (_) {},
+                          ),
+                        ),
                       ),
-                    ),
-                  ),
-                  Expanded(
-                    child: Center(
-                      child: CardView(
-                        card: loadedDeck.card(me.currentCardId),
-                        accent: Colors.teal,
-                        onSymbolTap: (id) => ref
-                            .read(onlineInfernoControllerProvider.notifier)
-                            .tap(id),
-                      ),
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [
-                        for (final e in snap.players.entries)
-                          Column(
+                      Expanded(
+                        child: Center(
+                          child: Stack(
+                            alignment: Alignment.topRight,
                             children: [
-                              Text(e.value.name),
-                              Text("${e.value.count}"),
-                              Icon(
-                                e.value.connected
-                                    ? Icons.circle
-                                    : Icons.circle_outlined,
-                                size: 10,
-                                color: e.value.connected
-                                    ? Colors.green
-                                    : Colors.grey,
+                              CardView(
+                                card: loadedDeck.card(me.currentCardId),
+                                accent: Colors.teal,
+                                onSymbolTap: (id) => ref
+                                    .read(
+                                      onlineInfernoControllerProvider.notifier,
+                                    )
+                                    .tap(id),
                               ),
+                              MatchCheckBadge(flash: _flash, onlySelf: true),
                             ],
                           ),
-                      ],
-                    ),
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: [
+                            for (final e in snap.players.entries)
+                              Column(
+                                children: [
+                                  Text(e.value.name),
+                                  Text("${e.value.count}"),
+                                  Icon(
+                                    e.value.connected
+                                        ? Icons.circle
+                                        : Icons.circle_outlined,
+                                    size: 10,
+                                    color: e.value.connected
+                                        ? Colors.green
+                                        : Colors.grey,
+                                  ),
+                                ],
+                              ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  Positioned(
+                    top: 12,
+                    left: 0,
+                    right: 0,
+                    child: Center(child: MatchFlashBanner(flash: _flash)),
                   ),
                 ],
               );
@@ -328,7 +370,8 @@ class _ResultViewState extends State<_ResultView>
                               avatarColor:
                                   _kAvatarColors[i % _kAvatarColors.length],
                               fraction: _stage(0.45, 0.9) *
-                                  widget.standings[i].value.count / maxCount,
+                                  widget.standings[i].value.count /
+                                  maxCount,
                             ),
                           ],
                         ],
@@ -390,9 +433,8 @@ class _ScoreRow extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: isWinner
-            ? Border.all(color: AppColors.mustard, width: 2)
-            : null,
+        border:
+            isWinner ? Border.all(color: AppColors.mustard, width: 2) : null,
         boxShadow: const [
           BoxShadow(color: Color(0x11000000), offset: Offset(0, 2)),
         ],

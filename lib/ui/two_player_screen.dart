@@ -15,6 +15,7 @@ import "../game/solo/solo_controller.dart" show deckProvider;
 import "../storage/settings_store.dart";
 import "widgets/card_view.dart";
 import "widgets/countdown_view.dart";
+import "widgets/match_flash.dart";
 import "widgets/quit_confirm.dart";
 
 class TwoPlayerScreen extends ConsumerStatefulWidget {
@@ -24,8 +25,18 @@ class TwoPlayerScreen extends ConsumerStatefulWidget {
   ConsumerState<TwoPlayerScreen> createState() => _TwoPlayerScreenState();
 }
 
-class _TwoPlayerScreenState extends ConsumerState<TwoPlayerScreen> {
+class _TwoPlayerScreenState extends ConsumerState<TwoPlayerScreen>
+    with TickerProviderStateMixin {
   bool _counting = true;
+  late final MatchFlash _flashP1 = MatchFlash(vsync: this);
+  late final MatchFlash _flashP2 = MatchFlash(vsync: this);
+
+  @override
+  void dispose() {
+    _flashP1.dispose();
+    _flashP2.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -59,9 +70,9 @@ class _TwoPlayerScreenState extends ConsumerState<TwoPlayerScreen> {
                   final st = ref.read(settingsProvider);
                   final wrongChanged = next.wrongP1 != prev.wrongP1 ||
                       next.wrongP2 != prev.wrongP2;
-                  final prevScore = prev.state.countP1 + prev.state.countP2;
-                  final nextScore = next.state.countP1 + next.state.countP2;
-                  final scored = nextScore > prevScore;
+                  final p1Scored = next.state.countP1 > prev.state.countP1;
+                  final p2Scored = next.state.countP2 > prev.state.countP2;
+                  final scored = p1Scored || p2Scored;
                   final hasWrong = next.wrongP1 != null || next.wrongP2 != null;
                   if (wrongChanged && hasWrong) {
                     hapticWrong(enabled: st.haptics);
@@ -69,6 +80,8 @@ class _TwoPlayerScreenState extends ConsumerState<TwoPlayerScreen> {
                   } else if (scored) {
                     hapticMatch(enabled: st.haptics);
                     sfxMatch(enabled: st.sound);
+                    if (p1Scored) _flashP1.show(text: "Matched!", isSelf: true);
+                    if (p2Scored) _flashP2.show(text: "Matched!", isSelf: true);
                   }
                 });
 
@@ -76,7 +89,8 @@ class _TwoPlayerScreenState extends ConsumerState<TwoPlayerScreen> {
 
                 return Stack(
                   children: [
-                    if (!view.state.isComplete) const _MatchBoard(),
+                    if (!view.state.isComplete)
+                      _MatchBoard(flashP1: _flashP1, flashP2: _flashP2),
                     if (!view.state.isComplete)
                       Positioned(
                         top: 8,
@@ -124,15 +138,18 @@ class _TwoPlayerScreenState extends ConsumerState<TwoPlayerScreen> {
   }
 }
 
-/// Horizontal space reserved outside each player circle for its score
-/// badge, so the badge never gets clipped by the screen edge. Must cover
-/// the badge's max width (104 + 22 padding) minus the smallest tuck-in.
-const double _kBadgeReserve = 112;
+/// Fixed vertical space each player's badge (label + score, plus the gap
+/// to its card) takes — reserved up front so the diameter calc never lets
+/// a circle grow tall enough to push its own badge off-screen.
+const double _kBadgeBlockHeight = 52;
 
 /// The three cards — player 1's, the shared centre pile, and player 2's —
 /// with the leftover vertical space split evenly between and around them.
 class _MatchBoard extends ConsumerWidget {
-  const _MatchBoard();
+  const _MatchBoard({required this.flashP1, required this.flashP2});
+
+  final MatchFlash flashP1;
+  final MatchFlash flashP2;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -143,13 +160,14 @@ class _MatchBoard extends ConsumerWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         // Leave just enough room for spaceEvenly to produce visible gaps
-        // between the three circles, instead of them touching edge-to-edge.
-        final heightBound = constraints.maxHeight / 3 * 0.94;
-        // Each circle is centred at `diameter` width and its badge pokes out
-        // past that box on one side only — but centring means the *other*
-        // side gets the same leftover margin too, so both sides need to
-        // clear the badge for the box to actually stay centred on screen.
-        final widthBound = constraints.maxWidth - (_kBadgeReserve * 2);
+        // between the three rows, instead of them touching edge-to-edge,
+        // and for each player row's badge above/below its circle.
+        final heightBound =
+            constraints.maxHeight / 3 * 0.94 - _kBadgeBlockHeight;
+        // The badge is a compact pill centred under the full screen width,
+        // not tucked to the circle's own side — so, unlike the circle, it
+        // never needs extra width reserved to avoid the screen edge.
+        final widthBound = constraints.maxWidth - 24;
         final diameter = math.min(widthBound, heightBound).clamp(120.0, 500.0);
 
         return SizedBox(
@@ -158,15 +176,16 @@ class _MatchBoard extends ConsumerWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-              _PlayerCircle(
+              _PlayerBlock(
                 diameter: diameter,
                 accent: AppColors.cinemaRed,
                 card: deck.card(st.heldFor(1)),
                 wrongSymbolId: view.wrongFor(1) >= 0 ? view.wrongFor(1) : null,
                 score: st.countP1,
                 playerLabel: "Player 1",
-                badgeSide: _BadgeSide.left,
+                anchor: _BadgeAnchor.above,
                 invertBadge: true,
+                flash: flashP1,
                 onSymbolTap: (id) =>
                     ref.read(twoPlayerControllerProvider.notifier).tap(1, id),
               ),
@@ -177,14 +196,15 @@ class _MatchBoard extends ConsumerWidget {
                 accent: AppColors.mustard,
                 onSymbolTap: (_) {},
               ),
-              _PlayerCircle(
+              _PlayerBlock(
                 diameter: diameter,
                 accent: AppColors.teal,
                 card: deck.card(st.heldFor(2)),
                 wrongSymbolId: view.wrongFor(2) >= 0 ? view.wrongFor(2) : null,
                 score: st.countP2,
                 playerLabel: "Player 2",
-                badgeSide: _BadgeSide.right,
+                anchor: _BadgeAnchor.below,
+                flash: flashP2,
                 onSymbolTap: (id) =>
                     ref.read(twoPlayerControllerProvider.notifier).tap(2, id),
               ),
@@ -196,19 +216,23 @@ class _MatchBoard extends ConsumerWidget {
   }
 }
 
-enum _BadgeSide { left, right }
+/// Where a player's badge sits relative to their card — `above` for the
+/// player at the top of the screen, `below` for the one at the bottom, so
+/// each badge lands at the screen edge nearest that player.
+enum _BadgeAnchor { above, below }
 
-/// A player's card with a compact score badge overlapping its edge,
-/// vertically centred, instead of a full-width header row above the card.
-class _PlayerCircle extends StatelessWidget {
-  const _PlayerCircle({
+/// A player's card with a compact score badge stacked above or below it,
+/// both centred on the same vertical line as the (badge-less) centre card.
+class _PlayerBlock extends StatelessWidget {
+  const _PlayerBlock({
     required this.diameter,
     required this.accent,
     required this.card,
     required this.score,
     required this.playerLabel,
     required this.onSymbolTap,
-    required this.badgeSide,
+    required this.anchor,
+    required this.flash,
     this.wrongSymbolId,
     this.invertBadge = false,
   });
@@ -219,7 +243,8 @@ class _PlayerCircle extends StatelessWidget {
   final int? wrongSymbolId;
   final int score;
   final String playerLabel;
-  final _BadgeSide badgeSide;
+  final _BadgeAnchor anchor;
+  final MatchFlash flash;
 
   /// Rotates the badge's content 180° — for the player whose card is read
   /// from the far end of the device.
@@ -228,32 +253,20 @@ class _PlayerCircle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isLeft = badgeSide == _BadgeSide.left;
-
     final badge = Container(
-      constraints: const BoxConstraints(maxWidth: 104),
-      padding: const EdgeInsets.fromLTRB(12, 8, 10, 8),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
         color: accent,
-        // Rounded on the outer (visible) end, square on the end tucked
-        // behind the card — that end is hidden, so its shape doesn't show.
-        borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(isLeft ? 14 : 0),
-          bottomLeft: Radius.circular(isLeft ? 14 : 0),
-          topRight: Radius.circular(isLeft ? 0 : 14),
-          bottomRight: Radius.circular(isLeft ? 0 : 14),
-        ),
+        borderRadius: BorderRadius.circular(999),
         boxShadow: const [
           BoxShadow(
             color: Color(0x33000000),
-            blurRadius: 8,
-            offset: Offset(2, 2),
+            blurRadius: 6,
+            offset: Offset(0, 2),
           ),
         ],
       ),
-      child: Column(
-        crossAxisAlignment:
-            isLeft ? CrossAxisAlignment.start : CrossAxisAlignment.end,
+      child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           Text(
@@ -261,60 +274,43 @@ class _PlayerCircle extends StatelessWidget {
             style: const TextStyle(
               color: Colors.white,
               fontWeight: FontWeight.w800,
-              fontSize: 11,
+              fontSize: 13,
             ),
           ),
+          const SizedBox(width: 8),
           Text(
             "$score",
             style: const TextStyle(
               color: Colors.white,
               fontWeight: FontWeight.w900,
-              fontSize: 22,
-              height: 1.2,
+              fontSize: 17,
             ),
           ),
         ],
       ),
     );
+    final orientedBadge =
+        invertBadge ? RotatedBox(quarterTurns: 2, child: badge) : badge;
 
-    // How far the badge's inner end reaches back under the card. Painted
-    // behind the card, that portion is hidden by the opaque circle — only
-    // the part sticking out past the circle's edge is visible — so the
-    // badge reads as emerging from underneath it.
-    final tuckIn = diameter * 0.14;
+    final circle = Stack(
+      alignment: Alignment.topRight,
+      children: [
+        CardView(
+          card: card,
+          diameter: diameter,
+          accent: accent,
+          wrongSymbolId: wrongSymbolId,
+          onSymbolTap: onSymbolTap,
+        ),
+        MatchCheckBadge(flash: flash),
+      ],
+    );
 
-    // The box is exactly the circle's own width, same as the (badge-less)
-    // centre card — so all three stay centred on the same vertical line.
-    // The badge pokes out past this box's edge via Clip.none; the caller
-    // reserves `_kBadgeReserve` of margin on *both* sides of the circle
-    // (since a centred box splits its leftover space evenly) so that
-    // overflow never reaches the screen edge.
-    return SizedBox(
-      width: diameter,
-      height: diameter,
-      child: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          Positioned(
-            top: 0,
-            bottom: 0,
-            right: isLeft ? diameter - tuckIn : null,
-            left: isLeft ? null : diameter - tuckIn,
-            child: Center(
-              child: invertBadge
-                  ? RotatedBox(quarterTurns: 2, child: badge)
-                  : badge,
-            ),
-          ),
-          CardView(
-            card: card,
-            diameter: diameter,
-            accent: accent,
-            wrongSymbolId: wrongSymbolId,
-            onSymbolTap: onSymbolTap,
-          ),
-        ],
-      ),
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: anchor == _BadgeAnchor.above
+          ? [orientedBadge, const SizedBox(height: 8), circle]
+          : [circle, const SizedBox(height: 8), orientedBadge],
     );
   }
 }
