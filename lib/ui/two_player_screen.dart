@@ -145,7 +145,11 @@ class _MatchBoard extends ConsumerWidget {
         // Leave just enough room for spaceEvenly to produce visible gaps
         // between the three circles, instead of them touching edge-to-edge.
         final heightBound = constraints.maxHeight / 3 * 0.94;
-        final widthBound = constraints.maxWidth - _kBadgeReserve;
+        // Each circle is centred at `diameter` width and its badge pokes out
+        // past that box on one side only — but centring means the *other*
+        // side gets the same leftover margin too, so both sides need to
+        // clear the badge for the box to actually stay centred on screen.
+        final widthBound = constraints.maxWidth - (_kBadgeReserve * 2);
         final diameter = math.min(widthBound, heightBound).clamp(120.0, 500.0);
 
         return SizedBox(
@@ -279,12 +283,14 @@ class _PlayerCircle extends StatelessWidget {
     // badge reads as emerging from underneath it.
     final tuckIn = diameter * 0.14;
 
-    // The circle is pushed to the far side of a widened box, leaving
-    // `_kBadgeReserve` of real (non-overflowing) space on the badge's side
-    // for it to stick out into — instead of relying on Positioned overflow,
-    // which got clipped whenever the screen didn't leave enough margin.
+    // The box is exactly the circle's own width, same as the (badge-less)
+    // centre card — so all three stay centred on the same vertical line.
+    // The badge pokes out past this box's edge via Clip.none; the caller
+    // reserves `_kBadgeReserve` of margin on *both* sides of the circle
+    // (since a centred box splits its leftover space evenly) so that
+    // overflow never reaches the screen edge.
     return SizedBox(
-      width: diameter + _kBadgeReserve,
+      width: diameter,
       height: diameter,
       child: Stack(
         clipBehavior: Clip.none,
@@ -300,16 +306,12 @@ class _PlayerCircle extends StatelessWidget {
                   : badge,
             ),
           ),
-          Positioned(
-            left: isLeft ? _kBadgeReserve : 0,
-            top: 0,
-            child: CardView(
-              card: card,
-              diameter: diameter,
-              accent: accent,
-              wrongSymbolId: wrongSymbolId,
-              onSymbolTap: onSymbolTap,
-            ),
+          CardView(
+            card: card,
+            diameter: diameter,
+            accent: accent,
+            wrongSymbolId: wrongSymbolId,
+            onSymbolTap: onSymbolTap,
           ),
         ],
       ),
