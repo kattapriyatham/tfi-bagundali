@@ -18,12 +18,14 @@ void main() {
     );
   }
 
-  test("start deals a run with 56 cards left and a stopped clock", () async {
+  test("start deals a 15-card run with 14 cards left and a stopped clock",
+      () async {
     final c = makeContainer();
     await c.read(deckProvider.future);
     c.read(soloControllerProvider.notifier).start(seed: 1);
     final v = c.read(soloControllerProvider);
-    expect(v.cardsLeft, 56);
+    expect(v.round.deckOrder.length, 15);
+    expect(v.cardsLeft, 14);
     expect(v.elapsed, Duration.zero);
     expect(v.complete, isFalse);
   });
@@ -40,7 +42,7 @@ void main() {
     ctrl.tap(wrong);
     final v = c.read(soloControllerProvider);
     expect(v.lastWrongSymbolId, wrong);
-    expect(v.cardsLeft, 56);
+    expect(v.cardsLeft, 14);
   });
 
   test("playing a full run completes and stores a best time", () async {

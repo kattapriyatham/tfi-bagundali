@@ -10,7 +10,7 @@ import "package:tfi_bagundali/ui/solo_game_screen.dart";
 void main() {
   final deck = deckFromRows(generateDobbleDeck(7));
 
-  testWidgets("countdown then playing state, 56 cards left", (tester) async {
+  testWidgets("countdown then playing state, 14 cards left", (tester) async {
     final router = GoRouter(
       routes: [
         GoRoute(path: "/", builder: (_, __) => const SoloGameScreen()),
@@ -33,6 +33,6 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text("Cards Left"), findsOneWidget);
-    expect(find.text("56"), findsOneWidget);
+    expect(find.text("14"), findsOneWidget);
   });
 }

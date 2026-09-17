@@ -7,6 +7,11 @@ import "../engine/round_state.dart";
 
 final deckProvider = FutureProvider<Deck>((ref) => loadDeck());
 
+/// Cards per solo run. A full 57-card shuffle made runs feel too long and
+/// left players frustrated before finishing — any subset of the deck still
+/// satisfies Spot It's one-shared-symbol rule, so trimming it is safe.
+const _kSoloDeckSize = 15;
+
 @immutable
 class SoloView {
   const SoloView({
@@ -72,7 +77,7 @@ class SoloController extends Notifier<SoloView> {
 
   @override
   SoloView build() => SoloView(
-        round: startRun(shuffledDeckOrder(0)),
+        round: startRun(_soloDeckOrder(0)),
         elapsed: Duration.zero,
         lastWrongSymbolId: null,
         complete: false,
@@ -85,13 +90,15 @@ class SoloController extends Notifier<SoloView> {
     _isNewBest = false;
     _commitFuture = null;
     state = SoloView(
-      round:
-          startRun(shuffledDeckOrder(seed ?? _clock().millisecondsSinceEpoch)),
+      round: startRun(_soloDeckOrder(seed ?? _clock().millisecondsSinceEpoch)),
       elapsed: Duration.zero,
       lastWrongSymbolId: null,
       complete: false,
     );
   }
+
+  List<int> _soloDeckOrder(int seed) =>
+      shuffledDeckOrder(seed).take(_kSoloDeckSize).toList();
 
   Deck get _deck => ref.read(deckProvider).requireValue;
 
