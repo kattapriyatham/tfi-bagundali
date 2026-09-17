@@ -1,7 +1,7 @@
 name: tfi_bagundali
 description: "TFI Bagundali - a Telugu cinema party card game."
 publish_to: "none"
-version: 0.1.0+2
+version: 0.1.0+3
 
 environment:
   sdk: ">=3.4.0 <4.0.0"
