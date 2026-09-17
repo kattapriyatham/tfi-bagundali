@@ -56,5 +56,8 @@ android/build/
 google-services.json
 GoogleService-Info.plist
 
+# Play Console service-account key — never commit
+android/play-console-key.json
+
 # Firebase emulator debug logs
 *-debug.log
